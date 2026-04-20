@@ -9,7 +9,7 @@ import java.util.List;
  * Each IRExpr carries a type. This tells the backend what types 
  * to use in the generated C code.
  */
-enum Type {
+enum GOTOType {
     INT, STRING, INTARRAY;
 
     @Override
@@ -26,7 +26,7 @@ enum Type {
  * Base class for all IR nodes.
  */
 abstract class GOTO {
-    public <T> T accept(Visitor<T> v) {
+    public <T> T accept(GOTOVisitor<T> v) {
         return v.visitGOTO(this);
     }
 }
@@ -35,7 +35,7 @@ abstract class GOTO {
  * Expressions in IR.
  */
 abstract class IRExpr extends GOTO {
-    public Type type;
+    public GOTOType type;
 }
 
 /**
@@ -157,7 +157,7 @@ class Printf extends Builtin {
     }
 
     @Override
-    public <T> T accept(Visitor<T> v) {
+    public <T> T accept(GOTOVisitor<T> v) {
         return v.visitPrintf(this);
     }
 }
@@ -202,13 +202,13 @@ class Input extends Builtin {}
 class Var extends IRExpr {
     public final String name;
 
-    public Var(String name, Type type) {
+    public Var(String name, GOTOType type) {
         this.name = name;
         this.type = type;
     }
 
     @Override
-    public <T> T accept(Visitor<T> v) {
+    public <T> T accept(GOTOVisitor<T> v) {
         return v.visitVar(this);
     }
 }
@@ -218,16 +218,16 @@ class Var extends IRExpr {
  *
  * Represents either a hardcoded int or string.
  */
-class Literal extends IRExpr {
+class GOTOLiteral extends IRExpr {
     public final Object value;  
 
-    public Literal(Object value, Type type) {
+    public GOTOLiteral(Object value, GOTOType type) {
         this.value = value;
         this.type = type;
     }
 
     @Override
-    public <T> T accept(Visitor<T> v) {
+    public <T> T accept(GOTOVisitor<T> v) {
         return v.visitLiteral(this);
     }
 }
@@ -241,11 +241,11 @@ class Literal extends IRExpr {
  * y + z
  * x < 5
  */
-class BinOp extends IRExpr {
+class GOTOBinOp extends IRExpr {
     public final String op;
     public final IRExpr left, right;
 
-    public BinOp(String op, IRExpr left, IRExpr right, Type type) {
+    public GOTOBinOp(String op, IRExpr left, IRExpr right, GOTOType type) {
         this.op = op;
         this.left = left;
         this.right = right;
@@ -253,8 +253,8 @@ class BinOp extends IRExpr {
     }
 
     @Override
-    public <T> T accept(Visitor<T> v) {
-        return v.visitBinOp(this);
+    public <T> T accept(GOTOVisitor<T> v) {
+        return v.visitGOTOBinOp(this);
     }
 }
 
@@ -269,14 +269,14 @@ class UnaryOp extends IRExpr {
     public final String op;
     public final IRExpr expr;
 
-    public UnaryOp(String op, IRExpr expr, Type type) {
+    public UnaryOp(String op, IRExpr expr, GOTOType type) {
         this.op = op;
         this.expr = expr;
         this.type = type;
     }
 
     @Override
-    public <T> T accept(Visitor<T> v) {
+    public <T> T accept(GOTOVisitor<T> v) {
         return v.visitUnaryOp(this);
     }
 }
@@ -293,13 +293,13 @@ class UnaryOp extends IRExpr {
 class Call extends IRExpr {
     public final String func;
 
-    public Call(String func, Type rettype) {
+    public Call(String func, GOTOType rettype) {
         this.func = func;
         this.type = rettype;
     }
 
     @Override
-    public <T> T accept(Visitor<T> v) {
+    public <T> T accept(GOTOVisitor<T> v) {
         return v.visitCall(this);
     }
 }
@@ -314,14 +314,14 @@ class ArrayLoad extends IRExpr {
     public final Var array;
     public final IRExpr index;
 
-    public ArrayLoad(Var array, IRExpr index, Type type) {
+    public ArrayLoad(Var array, IRExpr index, GOTOType type) {
         this.array = array;
         this.index = index;
         this.type = type; 
     }
 
     @Override
-    public <T> T accept(Visitor<T> v) {
+    public <T> T accept(GOTOVisitor<T> v) {
         return v.visitArrayLoad(this);
     }
 }
@@ -342,7 +342,7 @@ class Assign extends IRStmt {
     }
 
     @Override
-    public <T> T accept(Visitor<T> v) {
+    public <T> T accept(GOTOVisitor<T> v) {
         return v.visitAssign(this);
     }
 }
@@ -365,7 +365,7 @@ class ArrayStore extends IRStmt {
     }
 
     @Override
-    public <T> T accept(Visitor<T> v) {
+    public <T> T accept(GOTOVisitor<T> v) {
         return v.visitArrayStore(this);
     }
 }
@@ -393,7 +393,7 @@ class ArrayAlloc extends IRStmt {
     }
 
     @Override
-    public <T> T accept(Visitor<T> v) {
+    public <T> T accept(GOTOVisitor<T> v) {
         return v.visitArrayAlloc(this);
     }
 }
@@ -408,20 +408,20 @@ class ArrayAlloc extends IRStmt {
  * Your program is responsible for placing the true and false labels in the proper
  * locations. That does not happen automatically. 
  */
-class IfStmt extends IRStmt {
+class GOTOIfStmt extends IRStmt {
     public final IRExpr cond;
     public final String trueLabel;
     public final String falseLabel;
 
-    public IfStmt(IRExpr cond, String trueLabel, String falseLabel) {
+    public GOTOIfStmt(IRExpr cond, String trueLabel, String falseLabel) {
         this.cond = cond;
         this.trueLabel = trueLabel;
         this.falseLabel = falseLabel;
     }
 
     @Override
-    public <T> T accept(Visitor<T> v) {
-        return v.visitIfStmt(this);
+    public <T> T accept(GOTOVisitor<T> v) {
+        return v.visitGOTOIfStmt(this);
     }
 }
 
@@ -439,7 +439,7 @@ class Goto extends IRStmt {
     }
 
     @Override
-    public <T> T accept(Visitor<T> v) {
+    public <T> T accept(GOTOVisitor<T> v) {
         return v.visitGoto(this);
     }
 }
@@ -458,7 +458,7 @@ class Label extends IRStmt {
     }
 
     @Override
-    public <T> T accept(Visitor<T> v) {
+    public <T> T accept(GOTOVisitor<T> v) {
         return v.visitLabel(this);
     }
 }
@@ -469,15 +469,15 @@ class Label extends IRStmt {
  * Example emitted C:
  * return x;
  */
-class ReturnStmt extends IRStmt {
+class GOTOReturnStmt extends IRStmt {
     public final IRExpr value;
 
-    public ReturnStmt(IRExpr value) { 
+    public GOTOReturnStmt(IRExpr value) { 
         this.value = value; 
     }
 
     @Override
-    public <T> T accept(Visitor<T> v) {
-        return v.visitReturnStmt(this);
+    public <T> T accept(GOTOVisitor<T> v) {
+        return v.visitGOTOReturnStmt(this);
     }
 }

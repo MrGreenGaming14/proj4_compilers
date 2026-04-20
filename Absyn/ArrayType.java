@@ -17,4 +17,8 @@ public class ArrayType extends Decl{
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitArrayType(this);
 	}
+
+    public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitArrayType(this);
+	}
 }

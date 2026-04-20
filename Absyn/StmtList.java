@@ -31,4 +31,7 @@ public class StmtList extends Stmt{
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitStmtList(this);
 	}
+   public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitStmtList(this);
+	}
 }

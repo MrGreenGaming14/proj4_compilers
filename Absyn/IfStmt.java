@@ -28,4 +28,7 @@ public class IfStmt extends Stmt{
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitIfStmt(this);
 	}
+  public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitIfStmt(this);
+	}
 }

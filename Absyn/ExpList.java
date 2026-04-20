@@ -30,4 +30,7 @@ public class ExpList extends Exp{
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitExpList(this);
 	}
+   public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitExpList(this);
+	}
 }

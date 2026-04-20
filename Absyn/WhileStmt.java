@@ -23,4 +23,7 @@ public class WhileStmt extends Stmt{
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitWhileStmt(this);
 	}
+  public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitWhileStmt(this);
+	}
 }

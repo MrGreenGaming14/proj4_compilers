@@ -5,4 +5,7 @@ public class Exp extends Absyn {
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitExp(this);
 	}
+	public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitExp(this);
+	}
 }

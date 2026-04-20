@@ -25,4 +25,7 @@ public class UnionDecl extends Decl{
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitUnionDecl(this);
 	}
+    public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitUnionDecl(this);
+	}
 }

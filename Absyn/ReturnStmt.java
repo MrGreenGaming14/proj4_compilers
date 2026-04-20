@@ -14,4 +14,7 @@ public class ReturnStmt extends Stmt{
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitReturnStmt(this);
 	}
+  public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitReturnStmt(this);
+	}
 }

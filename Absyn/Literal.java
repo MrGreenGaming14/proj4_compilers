@@ -11,4 +11,7 @@ public class Literal<T> extends Exp {
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitLiteral(this);
 	}
+   public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitLiteral(this);
+	}
 }

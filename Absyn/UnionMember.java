@@ -19,4 +19,7 @@ public class UnionMember extends Parameter {
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitUnionMember(this);
 	}
+  public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitUnionMember(this);
+	}
 }

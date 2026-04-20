@@ -11,7 +11,7 @@ javac -d bin @sources.txt
 rm sources.txt
 
 if [ "$#" -eq 0 ]; then
-   java Typecheck.Main test.g
+   java CodeGen.Main test.g
 else
-   java Typecheck.Main $1
+   java CodeGen.Main $1
 fi

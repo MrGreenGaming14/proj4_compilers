@@ -16,4 +16,7 @@ public class DecLit extends Literal<Integer> {
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitDecLit(this);
 	}
+   public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitDecLit(this);
+	}
 }

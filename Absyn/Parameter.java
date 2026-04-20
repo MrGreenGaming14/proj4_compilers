@@ -22,4 +22,7 @@ public class Parameter extends Decl {
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitParameter(this);
 	}
+    public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitParameter(this);
+	}
 }

@@ -20,4 +20,7 @@ public class UnaryExp extends Exp {
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitUnaryExp(this);
 	}
+   public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitUnaryExp(this);
+	}
 }

@@ -12,4 +12,8 @@ public class BreakStmt extends Stmt{
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitBreakStmt(this);
 	}
+
+  public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitBreakStmt(this);
+	}
 }

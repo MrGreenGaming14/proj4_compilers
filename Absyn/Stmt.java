@@ -5,4 +5,7 @@ public class Stmt extends Absyn {
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitStmt(this);
 	}
+	public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitStmt(this);
+	}
 }

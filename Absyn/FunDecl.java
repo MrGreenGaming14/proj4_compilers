@@ -32,4 +32,7 @@ public class FunDecl extends Decl{
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitFunDecl(this);
 	}
+  public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitFunDecl(this);
+	}
 }

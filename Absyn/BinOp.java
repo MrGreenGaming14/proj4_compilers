@@ -19,4 +19,8 @@ public class BinOp extends Exp {
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitBinOp(this);
 	}
+
+   public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitBinOp(this);
+	}
 }

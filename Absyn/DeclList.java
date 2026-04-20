@@ -29,4 +29,7 @@ public class DeclList extends Decl{
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitDeclList(this);
 	}
+   public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitDeclList(this);
+	}
 }

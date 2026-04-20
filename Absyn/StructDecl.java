@@ -25,4 +25,7 @@ public class StructDecl extends Decl{
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitStructDecl(this);
 	}
+    public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitStructDecl(this);
+	}
 }

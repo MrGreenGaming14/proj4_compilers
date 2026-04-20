@@ -20,4 +20,8 @@ public class ArrayExp extends Exp {
 	public <T> T accept(Typecheck.Pass.Visitor<T> v) {
 		return v.visitArrayExp(this);
 	}
+
+    public <T> T accept(CodeGen.Visitor<T> v) {
+		return v.visitArrayExp(this);
+	}
 }

@@ -40,7 +40,7 @@ public class Emitter {
         }
     }
 
-    public static class InstructionEmitter implements Visitor<String> {
+    public static class InstructionEmitter implements GOTOVisitor<String> {
 
         @Override
         public String visitGOTO(GOTO instr) {
@@ -53,7 +53,7 @@ public class Emitter {
         }
 
         @Override
-        public String visitLiteral(Literal instr) {
+        public String visitLiteral(GOTOLiteral instr) {
             switch (instr.type) {
                 case INT -> { return instr.value.toString(); }
                 case STRING -> { return "\"" + instr.value.toString() + "\""; }
@@ -62,11 +62,11 @@ public class Emitter {
         }
 
         @Override
-        public String visitBinOp(BinOp instr) {
+        public String visitGOTOBinOp(GOTOBinOp instr) {
             return String.format("(%s %s %s)",
-                                 visit(instr.left),
+                                 GOTOvisit(instr.left),
                                  instr.op,
-                                 visit(instr.right)
+                                 GOTOvisit(instr.right)
                                  );
         }
 
@@ -74,7 +74,7 @@ public class Emitter {
         public String visitUnaryOp(UnaryOp instr) {
             return String.format("(%s(%s))",
                                  instr.op,
-                                 visit(instr.expr));
+                                 GOTOvisit(instr.expr));
         }
 
         @Override
@@ -86,31 +86,31 @@ public class Emitter {
         @Override
         public String visitArrayLoad(ArrayLoad instr) {
             return String.format("*(%s+%s)",
-                                 visit(instr.array),
-                                 visit(instr.index));
+                                 GOTOvisit(instr.array),
+                                 GOTOvisit(instr.index));
         }
         
         @Override
         public String visitAssign(Assign instr) {
                     return String.format("%s = %s;",
-                                         visit(instr.target),
-                                         visit(instr.value)
+                                         GOTOvisit(instr.target),
+                                         GOTOvisit(instr.value)
                                          );
         }
 
         @Override
         public String visitArrayStore(ArrayStore instr) {
             String ret = "";
-            String idx = visit(instr.index);
-            String val = visit(instr.value);
-            ret += "*(" + visit(instr.array) + " + " + idx + ") = " + val + ";\n";
+            String idx = GOTOvisit(instr.index);
+            String val = GOTOvisit(instr.value);
+            ret += "*(" + GOTOvisit(instr.array) + " + " + idx + ") = " + val + ";\n";
             return ret;
         }
 
         @Override
         public String visitArrayAlloc(ArrayAlloc instr) {
-            String arrayName = visit(instr.array);
-            String size = visit(instr.size);
+            String arrayName = GOTOvisit(instr.array);
+            String size = GOTOvisit(instr.size);
             String type = instr.array.type.toString();
                 return String.format("%s = realloc(%s, sizeof(%s) * %s);\n",
                                      arrayName,
@@ -120,9 +120,9 @@ public class Emitter {
         }
 
         @Override
-        public String visitIfStmt(IfStmt instr) {
+        public String visitGOTOIfStmt(GOTOIfStmt instr) {
             return String.format("if (%s) goto %s;\ngoto %s;",
-                                 visit(instr.cond),
+                                 GOTOvisit(instr.cond),
                                  instr.trueLabel,
                                  instr.falseLabel);
         }
@@ -140,16 +140,16 @@ public class Emitter {
         }
 
         @Override
-        public String visitReturnStmt(ReturnStmt instr) {
+        public String visitGOTOReturnStmt(GOTOReturnStmt instr) {
             return String.format("return %s;",
-                                 visit(instr.value));
+                                 GOTOvisit(instr.value));
         }
 
         public String visitPrintf(Printf instr) {
             StringBuilder sb = new StringBuilder();
             sb.append("printf(\"").append(instr.format).append("\"");
             for (IRExpr arg : instr.args) {
-                sb.append(", ").append(visit(arg));
+                sb.append(", ").append(GOTOvisit(arg));
             }
             sb.append(");");
             return sb.toString();
