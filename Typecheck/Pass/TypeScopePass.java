@@ -18,7 +18,7 @@ public class TypeScopePass extends ScopePass<Void> {
       if(node.body != null){
          visitDeclList(node.body);
       }
-      ArrayList<Type> arrlist = new ArrayList<>();
+      ArrayList<TypecheckType> arrlist = new ArrayList<>();
       Absyn.StructMember sm;
       for(int i = 0; i < node.body.list.size(); i++){
          sm = (Absyn.StructMember)node.body.list.get(i);
@@ -48,7 +48,7 @@ public class TypeScopePass extends ScopePass<Void> {
       if(node.body != null){
          visitDeclList(node.body);
       }
-      ArrayList<Type> arrlist = new ArrayList<>();
+      ArrayList<TypecheckType> arrlist = new ArrayList<>();
       Absyn.UnionMember um;
       for(int i = 0; i < node.body.list.size(); i++){
          um = (Absyn.UnionMember)node.body.list.get(i);
@@ -92,7 +92,7 @@ public class TypeScopePass extends ScopePass<Void> {
 // look up the type of the alias in the symbol table.
     // This is a function I found helpful to implement. If you have a solution
     // in mind that does not include a helper function, then feel free to ignore
-   private Type resolveAlias(Type type) {
+   private TypecheckType resolveAlias(TypecheckType type) {
       if(type instanceof ARRAY){
          ARRAY arr = (ARRAY)type;
          arr.type = resolveAlias(arr.type);

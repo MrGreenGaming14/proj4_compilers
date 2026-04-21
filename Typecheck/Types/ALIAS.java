@@ -4,9 +4,9 @@ import java.util.Set;
 import java.util.HashSet;
 import Typecheck.TypeCheckException;
 
-public class ALIAS extends Type {
+public class ALIAS extends TypecheckType {
    public String name;
-   private Type type;
+   private TypecheckType type;
 
    // We don't know enough information to assign 
    // the type yet. Maybe we can do it later?
@@ -15,20 +15,20 @@ public class ALIAS extends Type {
       this.type = null;
    }
 
-   public void setType(Type t) {
+   public void setType(TypecheckType t) {
       this.type = t;
    }
 
-   public Type getType() {
+   public TypecheckType getType() {
       if (this.type == null) {
          throw new TypeCheckException("ALIAS has not been given a type yet");
       } else return this.type;
    }
 
-   public boolean canAccept(Type t) {return this.type.canAccept(t);}
+   public boolean canAccept(TypecheckType t) {return this.type.canAccept(t);}
 
-   public Set<Type> getSynonyms() {
-      Set<Type> set = new HashSet<>();
+   public Set<TypecheckType> getSynonyms() {
+      Set<TypecheckType> set = new HashSet<>();
       set.add(this);
       set.add(this.type);
       return set;

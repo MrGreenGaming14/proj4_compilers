@@ -125,7 +125,7 @@ class Program {
  *     return x;
  * }
  */
-class Function {
+class Function extends GOTO{
     public ArrayList<GOTO> instr;
     public String name;
     public String returntype;

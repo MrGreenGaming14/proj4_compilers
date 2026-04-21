@@ -28,7 +28,7 @@ public class TypeAnnotationPass extends Pass<Void> {
     //            Pull the next bracket and construct an ARRAY(ARRAY(basetype))
     //            Keep repeating.
 
-   public Type copy(Type input){
+   public TypecheckType copy(TypecheckType input){
       //do we need to handle pointers?
       if(input instanceof POINTER){
          POINTER ptr = (POINTER)input;
@@ -53,8 +53,8 @@ public class TypeAnnotationPass extends Pass<Void> {
       }
       else if(input instanceof LIST){
          LIST list = (LIST)input;
-         ArrayList<Type> copy = new ArrayList<>();
-         for(Type type : list.typelist){
+         ArrayList<TypecheckType> copy = new ArrayList<>();
+         for(TypecheckType type : list.typelist){
             copy.add(copy(type));
          }
          return new LIST(copy);
@@ -76,7 +76,7 @@ public class TypeAnnotationPass extends Pass<Void> {
          throw new TypeCheckException("Array has invalid parameters in []");
 
       // 1. Construct the base type ("string" -> STRING)
-      Type basetype = node.name.equals("int") ? new INT() :
+      TypecheckType basetype = node.name.equals("int") ? new INT() :
                   node.name.equals("string") ? new STRING() :
                   node.name.equals("void") ? new VOID() :
                   new ALIAS(node.name);
@@ -106,7 +106,7 @@ public class TypeAnnotationPass extends Pass<Void> {
          for (int d = dims.size() - 1; d >= 0; d--) {
             Absyn.Decl decl = dims.get(d);
             if (decl instanceof Absyn.ArrayType arr && arr.size instanceof Absyn.DecLit lit) {
-               ArrayList<Type> types = new ArrayList<>();
+               ArrayList<TypecheckType> types = new ArrayList<>();
                for (int i = 0; i < lit.value; i++) {
                      types.add(copy(basetype));
                }

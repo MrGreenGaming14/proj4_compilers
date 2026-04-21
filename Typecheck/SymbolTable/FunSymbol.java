@@ -5,9 +5,9 @@ public class FunSymbol extends Symbol {
 
    public String name;
    public LIST params;
-   public Type returnType;
+   public TypecheckType returnType;
 
-   public FunSymbol(String n, LIST l, Type r) {
+   public FunSymbol(String n, LIST l, TypecheckType r) {
       this.name = n;
       this.params = l;
       this.returnType = r;

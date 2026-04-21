@@ -14,8 +14,7 @@ public class Main {
 
         CommonTokenStream tokens = new CommonTokenStream(lexer);      
 
-
-         System.out.println("Starting Parser");
+        System.out.println("Starting Parser");
         gParser parser = new gParser(tokens);
 
         ParseTree tree = parser.program();

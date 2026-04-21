@@ -8,6 +8,7 @@ import Typecheck.Pass.FunAndVarScopePass;
 import Typecheck.Pass.JudgementsPass;
 import Typecheck.Pass.TypeAnnotationPass;
 import Typecheck.Pass.TypeScopePass;
+import java.util.ArrayList;
 
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
@@ -53,6 +54,8 @@ public class Main {
         asttree.accept(vrp);
         GOTOConstructionPass gcp = new GOTOConstructionPass(GOTOprog);
         asttree.accept(gcp);
-    
+        for(Var global : GOTOprog.globals){
+            System.out.println("global: name: "+global.name+" type: "+global.type.toString());
+        }
     }
 }

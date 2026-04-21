@@ -5,26 +5,26 @@ import java.util.HashSet;
 
 
 public class POINTER extends INT {
-   public Type type;
+   public TypecheckType type;
    public static final POINTER INSTANCE = new POINTER(new INT());
 
 
-   public POINTER(Type t) {
+   public POINTER(TypecheckType t) {
       this.type = t;
    }
 
    @Override
-   public boolean canAccept(Type t) {
+   public boolean canAccept(TypecheckType t) {
       boolean ret = false;
-      for (Type syn : t.getSynonyms()) {
+      for (TypecheckType syn : t.getSynonyms()) {
          ret |= (syn instanceof INT || syn instanceof POINTER);
       }
       return ret;
    }
 
    @Override
-   public Set<Type> getSynonyms() {
-      Set<Type> set = new HashSet<>();
+   public Set<TypecheckType> getSynonyms() {
+      Set<TypecheckType> set = new HashSet<>();
       set.add(this);
       set.add(new INT());
       return set;

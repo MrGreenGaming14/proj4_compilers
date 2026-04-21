@@ -5,9 +5,9 @@ import Typecheck.Types.*;
 public class VarSymbol extends Symbol {
 
    public String name;
-   public Type type;
+   public TypecheckType type;
 
-   public VarSymbol(String n, Type t) {
+   public VarSymbol(String n, TypecheckType t) {
       this.name = n;
       this.type = t;
    }

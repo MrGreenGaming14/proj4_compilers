@@ -1,6 +1,6 @@
 package Typecheck.Pass;
 import Absyn.*;
-import Typecheck.Types.Type;
+import Typecheck.Types.TypecheckType;
 import Typecheck.Types.LIST;
 import Typecheck.SymbolTable.*;
 import Typecheck.TypeCheckException;
@@ -51,7 +51,7 @@ public class FunAndVarScopePass extends ScopePass<Void> {
       if(this.currentscope.hasLocalVar(node.name)){
          throw new TypeCheckException("Tried to define fun ("+node.name+") but var with same name already exists");
       }
-      ArrayList<Type> arrlist = new ArrayList<>();
+      ArrayList<TypecheckType> arrlist = new ArrayList<>();
       Parameter param;
       for(int i = 0; i < node.params.list.size(); i++){
          param = (Parameter)node.params.list.get(i);

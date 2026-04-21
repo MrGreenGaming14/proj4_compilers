@@ -6,12 +6,16 @@ fun int test_func () {
         var int a = 2;
         fun int test_func3(){
             var int a = 3;
-            var int a = 4;
+            var int b = 2;
+            var int c = a + b;
             return a;
         }
-        var int a = 3;
         return a;
     }
-    var int a = 2;
     return a;
+}
+fun string*** test_func4(){
+    var string str = "";
+    var string*** str_ptr = &(&(&str));
+    return str_ptr;
 }

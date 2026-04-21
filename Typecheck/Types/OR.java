@@ -6,17 +6,17 @@ import java.util.HashSet;
 
 // This is only for unions
 
-public class OR extends Type {
-   public ArrayList<Type> options;
+public class OR extends TypecheckType {
+   public ArrayList<TypecheckType> options;
 
-   public OR(ArrayList<Type> tl) {
+   public OR(ArrayList<TypecheckType> tl) {
       this.options = tl;
    }
 
    @Override
-   public boolean canAccept(Type tt) { 
-      for (Type t: tt.getSynonyms()) {
-         for (Type option : this.options) {
+   public boolean canAccept(TypecheckType tt) { 
+      for (TypecheckType t: tt.getSynonyms()) {
+         for (TypecheckType option : this.options) {
             if (option.canAccept(t)) {
                return true;
             }
@@ -25,9 +25,9 @@ public class OR extends Type {
       return false;
    }
 
-   public Set<Type> getSynonyms() {
-      Set<Type> set = new HashSet<>();
-      for (Type o : this.options) {
+   public Set<TypecheckType> getSynonyms() {
+      Set<TypecheckType> set = new HashSet<>();
+      for (TypecheckType o : this.options) {
          set.add(o);
       }
       return set;
@@ -37,7 +37,7 @@ public class OR extends Type {
    public String toString() {
       String ret = "";
       ret += ("OR(\n");
-      for (Type t: this.options) {
+      for (TypecheckType t: this.options) {
          ret += ("\t" + t.toString() + "\n");
       }
       ret += (")");

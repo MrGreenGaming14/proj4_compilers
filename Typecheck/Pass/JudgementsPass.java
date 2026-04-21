@@ -8,20 +8,20 @@ import java.util.ArrayList;
 // This pass implements the type rules.
 // Some of the logic has been implemented for you in the Types.
 // Check out the "canAccept" functions.
-public class JudgementsPass extends ScopePass<Type> {
+public class JudgementsPass extends ScopePass<TypecheckType> {
 
-   protected Type defaultReturn = null;
+   protected TypecheckType defaultReturn = null;
 
    public JudgementsPass(Scope s) {
       super(s);
    }
    
    @Override
-   public Type visitVarDecl(Absyn.VarDecl node){
+   public TypecheckType visitVarDecl(Absyn.VarDecl node){
       //System.out.println(node.print(0));
-      Type varType = node.type.typeAnnotation;
+      TypecheckType varType = node.type.typeAnnotation;
       //System.out.println("varType = "+varType.toString()+"\n\n");
-      Type expType = visit(node.init);
+      TypecheckType expType = visit(node.init);
       if(expType != null){
          if(!varType.canAccept(expType)){
             throw new TypeCheckException("Tried to initialize var ("+node.name+") of type "+varType.toString()+" as incompatible type "+expType.toString());
@@ -43,14 +43,14 @@ public class JudgementsPass extends ScopePass<Type> {
 
    //Rule 10:
    @Override
-   public Type visitFunDecl(Absyn.FunDecl node){
+   public TypecheckType visitFunDecl(Absyn.FunDecl node){
       //System.out.println(node.print(0));
       Scope originalscope = currentscope;
 		currentscope = node.scope;
       visit(node.type);
 		visit(node.params);
-		Type bodyType = visit(node.body);
-      Type funType = node.type.typeAnnotation;
+		TypecheckType bodyType = visit(node.body);
+      TypecheckType funType = node.type.typeAnnotation;
       /*
       System.out.println(node.name+":");
       if(bodyType != null){ System.out.println("bodyType: "+bodyType.getClass()); }
@@ -76,8 +76,8 @@ public class JudgementsPass extends ScopePass<Type> {
    }
 
    @Override
-	public Type visitCompStmt(Absyn.CompStmt node) {
-      Type returnType = visit(node.decl_list);
+	public TypecheckType visitCompStmt(Absyn.CompStmt node) {
+      TypecheckType returnType = visit(node.decl_list);
       if(returnType == null){
          returnType = visit(node.stmt_list);
       }
@@ -88,10 +88,10 @@ public class JudgementsPass extends ScopePass<Type> {
 	}
 
    @Override
-   public Type visitDeclList(Absyn.DeclList node) {
-      Type returnType = null;
+   public TypecheckType visitDeclList(Absyn.DeclList node) {
+      TypecheckType returnType = null;
       for (Absyn.Decl d : node.list) {
-         Type type = visit(d);
+         TypecheckType type = visit(d);
          if(returnType == null && type != null){
             returnType = type;
          }
@@ -104,10 +104,10 @@ public class JudgementsPass extends ScopePass<Type> {
 	}
 
    @Override
-	public Type visitStmtList(Absyn.StmtList node) {
-      Type returnType = null;
+	public TypecheckType visitStmtList(Absyn.StmtList node) {
+      TypecheckType returnType = null;
       for (Absyn.Stmt d : node.list) {
-         Type type = visit(d);
+         TypecheckType type = visit(d);
          if(returnType == null && type != null){
             returnType = type;
          }
@@ -119,12 +119,12 @@ public class JudgementsPass extends ScopePass<Type> {
 	}
 
    @Override
-   public Type visitIfStmt(Absyn.IfStmt node){
+   public TypecheckType visitIfStmt(Absyn.IfStmt node){
       Scope originalscope = currentscope;
 		currentscope = node.scope;
-      Type checkType = visit(node.expression);
-		Type type1 = visit(node.if_statement);
-		Type type2 = visit(node.else_statement);
+      TypecheckType checkType = visit(node.expression);
+		TypecheckType type1 = visit(node.if_statement);
+		TypecheckType type2 = visit(node.else_statement);
       //Rule 13:
       if(checkType != null && !(checkType instanceof INT)){
          if(checkType != null){
@@ -146,40 +146,43 @@ public class JudgementsPass extends ScopePass<Type> {
    }
 
    @Override
-   public Type visitReturnStmt(Absyn.ReturnStmt node){
+   public TypecheckType visitReturnStmt(Absyn.ReturnStmt node){
 		return visit(node.expression);
    }
 
    @Override
-   public Type visitDecLit(Absyn.DecLit node){
+   public TypecheckType visitDecLit(Absyn.DecLit node){
       return new INT();
    }
 
    @Override
-   public Type visitStrLit(Absyn.StrLit node){
+   public TypecheckType visitStrLit(Absyn.StrLit node){
       return new STRING();
    }
 
    @Override
-   public Type visitID(Absyn.ID node){
+   public TypecheckType visitID(Absyn.ID node){
+      TypecheckType type;
       if(node.value.equals("null")){
-         return new VOID();
+         type = new VOID();
       }
       else{
-         return this.currentscope.getVar(node.value).type;
+         type = this.currentscope.getVar(node.value).type;
       }
+      node.typeAnnotation = type;
+      return type;
    }
 
    @Override
-   public Type visitType(Absyn.Type node){
+   public TypecheckType visitType(Absyn.Type node){
       return node.typeAnnotation;
    }
 
    //Many rules need these to get the correct type out of expressions:
    @Override
-   public Type visitBinOp(Absyn.BinOp node){
-      Type type1 = visit(node.left);
-      Type type2 = visit(node.right);
+   public TypecheckType visitBinOp(Absyn.BinOp node){
+      TypecheckType type1 = visit(node.left);
+      TypecheckType type2 = visit(node.right);
       if((type1.getClass() != type2.getClass()) &&
          !((type1 instanceof POINTER) && (type2 instanceof INT)) &&
          !(((type1 instanceof INT) && (type2 instanceof POINTER)))){
@@ -195,9 +198,9 @@ public class JudgementsPass extends ScopePass<Type> {
 
    //Rule 9:
    @Override
-   public Type visitFunExp(Absyn.FunExp node){
+   public TypecheckType visitFunExp(Absyn.FunExp node){
       //System.out.println(node.print(0));
-      Type expType = visit(node.params);
+      TypecheckType expType = visit(node.params);
       Absyn.ID funcId = (Absyn.ID)node.name;
       FunSymbol funSym = this.currentscope.getFun(funcId.value);
       if(expType == null){
@@ -212,8 +215,8 @@ public class JudgementsPass extends ScopePass<Type> {
    }
 
    @Override
-   public Type visitUnaryExp(Absyn.UnaryExp node){
-      Type type = visit(node.exp);
+   public TypecheckType visitUnaryExp(Absyn.UnaryExp node){
+      TypecheckType type = visit(node.exp);
       if(node.prefix.equals("*")){ //dereference
          if(type instanceof POINTER){
             POINTER ptr = (POINTER)type;
@@ -230,9 +233,9 @@ public class JudgementsPass extends ScopePass<Type> {
    }
 
    @Override
-   public Type visitExpList(Absyn.ExpList node){
-      Type returnType = defaultReturn;
-      ArrayList<Type> typelist = new ArrayList<Type>();
+   public TypecheckType visitExpList(Absyn.ExpList node){
+      TypecheckType returnType = defaultReturn;
+      ArrayList<TypecheckType> typelist = new ArrayList<TypecheckType>();
       for (Exp e : node.list) {
          typelist.add(visit(e));
 		}
@@ -247,5 +250,4 @@ public class JudgementsPass extends ScopePass<Type> {
       }
       return returnType;
    }
-
 }

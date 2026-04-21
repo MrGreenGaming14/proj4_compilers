@@ -1,5 +1,7 @@
 package CodeGen;
 import Absyn.*;
+import Typecheck.TypeCheckException;
+import Typecheck.Types.*;
 
 
 public class GOTOVariableRenamingPass extends ScopePass<Void> {
@@ -8,6 +10,26 @@ public class GOTOVariableRenamingPass extends ScopePass<Void> {
 
    public Scope globalscope;
    public Program GOTOprog;
+
+   public GOTOType typecheckTypeToGOTO(TypecheckType varType){
+      GOTOType gotoVarType;
+      if(varType instanceof POINTER){
+         gotoVarType = GOTOType.INT;
+      }
+      else if(varType instanceof INT){
+         gotoVarType = GOTOType.INT;
+      }
+      else if(varType instanceof STRING){
+         gotoVarType = GOTOType.STRING;
+      }
+      else if(varType instanceof LIST || varType instanceof ARRAY){
+         gotoVarType = GOTOType.INTARRAY;
+      }
+      else{
+         throw new TypeCheckException("CodeGen only accepts variables of int, string, or int array");
+      }
+      return gotoVarType;
+   }
 
    public GOTOVariableRenamingPass(Scope s) {
       super(s);
@@ -20,17 +42,21 @@ public class GOTOVariableRenamingPass extends ScopePass<Void> {
 
    @Override
    public Void visitVarDecl(VarDecl node){
-      if(this.currentscope.hasLocalVar(node.name)){
-         System.out.println("Var "+node.name+" found to have been renamed to "+this.currentscope.getVar(node.name).new_name);
-         node.name = this.currentscope.getVar(node.name).new_name;
-      }
-      else{
-         String new_name = GOTOprog.getUniqueVarName();
-         System.out.println("Renaming var "+node.name+" to "+new_name);
-         VarSymbol vs = new VarSymbol(node.name, new_name);
-         this.currentscope.addVar(node.name, vs);
-         node.name = new_name;
-      }
+      visit(node.init);
+      //System.out.println(node.init.print(0));
+      String new_name = GOTOprog.getUniqueVarName();
+      //System.out.println("Renaming var "+node.name+" to "+new_name);
+      VarSymbol vs = new VarSymbol(node.name, new_name);
+      this.currentscope.addVar(node.name, vs);
+      node.name = new_name;
+      GOTOType gotoType = typecheckTypeToGOTO(node.type.typeAnnotation);
+      GOTOprog.globals.add(new Var(node.name, gotoType));
+      return defaultReturn;
+   }
+
+   @Override
+   public Void visitID(ID node){
+      node.value = this.currentscope.getVar(node.value).new_name;
       return defaultReturn;
    }
 

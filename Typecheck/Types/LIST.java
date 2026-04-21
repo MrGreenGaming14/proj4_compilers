@@ -1,15 +1,15 @@
 
 package Typecheck.Types;
 import java.util.ArrayList;
-public class LIST extends Type {
-   public ArrayList<Type> typelist;
+public class LIST extends TypecheckType {
+   public ArrayList<TypecheckType> typelist;
 
-   public LIST(ArrayList<Type> tl) {
+   public LIST(ArrayList<TypecheckType> tl) {
       this.typelist = tl;
    }
 
-   public boolean canAccept(Type tt) {
-      for (Type t: tt.getSynonyms()) {
+   public boolean canAccept(TypecheckType tt) {
+      for (TypecheckType t: tt.getSynonyms()) {
          if (t instanceof ARRAY) {
             ARRAY arr = (ARRAY) t;
             return this.typelist.stream()
@@ -33,7 +33,7 @@ public class LIST extends Type {
    public String toString() {
       String ret = "";
       ret += ("LIST(\n");
-      for (Type t: this.typelist) {
+      for (TypecheckType t: this.typelist) {
          ret += ("\t" + t.toString() + "\n");
       }
       ret += (")");
