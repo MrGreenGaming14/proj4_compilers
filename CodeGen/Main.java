@@ -47,7 +47,12 @@ public class Main {
         }
 
         Program GOTOprog = new Program();
+        GOTOCreateScopePass csp = new GOTOCreateScopePass();
+        asttree.accept(csp);
+        GOTOVariableRenamingPass vrp = new GOTOVariableRenamingPass(csp.globalscope, GOTOprog);
+        asttree.accept(vrp);
         GOTOConstructionPass gcp = new GOTOConstructionPass(GOTOprog);
+        asttree.accept(gcp);
     
     }
 }

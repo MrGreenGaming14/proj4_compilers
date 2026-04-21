@@ -11,7 +11,7 @@ javac -d bin @sources.txt
 rm sources.txt
 
 if [ "$#" -eq 0 ]; then
-   java CodeGen.Main test.g
+   java CodeGen.Main test2.g
 else
    java CodeGen.Main $1
 fi
