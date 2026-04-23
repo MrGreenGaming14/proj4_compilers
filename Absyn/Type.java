@@ -1,5 +1,4 @@
 package Absyn;
-import java.util.ArrayList;
 
 public class Type extends Decl{
     public String name;

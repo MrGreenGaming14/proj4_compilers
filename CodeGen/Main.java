@@ -43,19 +43,44 @@ public class Main {
             JudgementsPass jp = new JudgementsPass(scp.globalscope);
             asttree.accept(jp);
             System.out.println("Type Check Passed!");
+
+            Program GOTOprog = new Program();
+            GOTOCreateScopePass csp = new GOTOCreateScopePass();
+            asttree.accept(csp);
+            GOTOVariableRenamingPass vrp = new GOTOVariableRenamingPass(csp.globalscope, GOTOprog);
+            asttree.accept(vrp);
+            GOTOConstructionPass gcp = new GOTOConstructionPass(GOTOprog);
+            asttree.accept(gcp);
+            GOTOprog.funcs.add(gcp.mainFunction);
+            for(Var global : GOTOprog.globals){
+                System.out.println("global: name: "+global.name+" | type: "+global.type.toString());
+            }
+            for(Function func : GOTOprog.funcs){
+                System.out.println("func: name: "+func.name+" | return type: "+func.returntype+" | instr count: "+func.instr.size());
+                int i = 1;
+                for(GOTO instr : func.instr){
+                    System.out.print("instr "+i+": ");
+                    if(instr instanceof Assign){
+                        Assign assign = (Assign)instr;
+                        System.out.print("Assign for var: "+assign.target.name);
+                    }
+                    else if(instr instanceof GOTOReturnStmt){
+                        GOTOReturnStmt retStmt = (GOTOReturnStmt)instr;
+                        System.out.print("Return");
+                    }
+                    else if(instr instanceof Call){
+                        Call call = (Call)instr;
+                        System.out.print("Call to function: "+call.func);
+                    }
+                    else{
+                        System.out.print("unknown type");
+                    }
+                    System.out.println();
+                    i++;
+                }
+            }
         } catch (TypeCheckException e) {
             System.err.println("TypeCheckError: " + e.getMessage());
-        }
-
-        Program GOTOprog = new Program();
-        GOTOCreateScopePass csp = new GOTOCreateScopePass();
-        asttree.accept(csp);
-        GOTOVariableRenamingPass vrp = new GOTOVariableRenamingPass(csp.globalscope, GOTOprog);
-        asttree.accept(vrp);
-        GOTOConstructionPass gcp = new GOTOConstructionPass(GOTOprog);
-        asttree.accept(gcp);
-        for(Var global : GOTOprog.globals){
-            System.out.println("global: name: "+global.name+" type: "+global.type.toString());
         }
     }
 }

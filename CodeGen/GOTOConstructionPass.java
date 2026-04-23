@@ -60,63 +60,85 @@ public class GOTOConstructionPass extends Pass<ArrayList<GOTO>> {
       return gotoVarType;
    }
 
-   protected GOTO defaultReturn = null;
+   protected ArrayList<GOTO> defaultReturn = null;
 
    public Program GOTOprog;
+   public Function mainFunction;
+   protected Function currentFunction;
 
    public GOTOConstructionPass(Program GOTOprog) {
       this.GOTOprog = GOTOprog;
+      this.mainFunction = new Function("main","void");
+      this.currentFunction = mainFunction;
    }
 
-   //construct Var objects in a different pass
    @Override
    public ArrayList<GOTO> visitVarDecl(VarDecl node){
       visit(node.type);
-      visit(node.init);
-      ArrayList<GOTO> result = new ArrayList<GOTO>();
+      ArrayList<GOTO> init = visit(node.init);
       Typecheck.Types.TypecheckType varType = node.type.typeAnnotation;
       GOTOType gotoVarType = typecheckTypeToGOTO(varType);
-      result.add(new Var(node.name, gotoVarType));
-      return result;
+      Assign assign;
+      if(init != null){
+         assign = new Assign(new Var(node.name, gotoVarType), (IRExpr)init.get(0));
+      }
+      else{
+         assign = new Assign(new Var(node.name, gotoVarType), null);
+      }
+      currentFunction.instr.add(assign);
+      return defaultReturn;
    }
 
    @Override
    public ArrayList<GOTO> visitFunDecl(FunDecl node){
-      ArrayList<GOTO> result = new ArrayList<GOTO>();
-      ArrayList<GOTO> instrs;
-      ArrayList<GOTO> ret;
       TypecheckType tcType;
+      GOTOType gotoType;
       String retType = "";
 
       visit(node.type);
       tcType = node.type.typeAnnotation;
       retType = typecheckTypeToC(tcType);
-      
-      instrs = visit(node.params);
-      ret = visit(node.body);
-      if(instrs != null && ret != null){
-         instrs.addAll(ret);
+      gotoType = typecheckTypeToGOTO(tcType);
+
+      currentFunction.instr.add(new Call(node.name, gotoType));
+
+      Function originalFunction = currentFunction;
+      currentFunction = new Function(node.name, retType);
+
+      //System.out.println(node.print(0));
+      visit(node.body);
+
+      GOTOprog.funcs.add(currentFunction);
+      currentFunction = originalFunction;
+      return defaultReturn;
+   }
+
+   @Override
+   public ArrayList<GOTO> visitCompStmt(CompStmt node){
+      ArrayList<GOTO> result = new ArrayList<GOTO>();
+      ArrayList<GOTO> decl_list;
+      ArrayList<GOTO> stmt_list;
+      decl_list = visit(node.decl_list);
+      stmt_list = visit(node.stmt_list);
+      if(decl_list != null){
+         result.addAll(decl_list);
       }
-      Function func = new Function(node.name, retType);
-      func.instr = instrs;
-      result.add(func);
-      //System.out.println("retType = "+retType);
+      if(stmt_list != null){
+         result.addAll(stmt_list);
+      }
       return result;
    }
 
    @Override
    public ArrayList<GOTO> visitDeclList(DeclList node){
       //System.out.println(node.print(0));
-      ArrayList<GOTO> result = new ArrayList<GOTO>();
       for(Decl d : node.list){
-         ArrayList<GOTO> instr = visit(d);
-         if(instr != null){
-            result.addAll(instr);
-         }
+         visit(d);
       }
-      return result;
+      return defaultReturn;
    }
 
+   /*
    @Override
    public ArrayList<GOTO> visitAssignExp(AssignExp node){
       ArrayList<GOTO> result = new ArrayList<GOTO>();
@@ -124,8 +146,12 @@ public class GOTOConstructionPass extends Pass<ArrayList<GOTO>> {
       ArrayList<GOTO> right = visit(node.right);
       Assign assign = new Assign((Var)left.get(0), (IRExpr)right.get(0));
       result.add(assign);
+      if(assign != null){
+         System.out.println(assign+" | "+(Var)left.get(0)+" | "+(IRExpr)right.get(0));
+      }
       return result;
    }
+   */
 
    @Override
    public ArrayList<GOTO> visitBinOp(BinOp node){
@@ -156,5 +182,14 @@ public class GOTOConstructionPass extends Pass<ArrayList<GOTO>> {
       Var var = new Var(node.value, gotoType);
       result.add(var);
       return result;
+   }
+
+   @Override
+   public ArrayList<GOTO> visitReturnStmt(ReturnStmt node){
+      ArrayList<GOTO> expr = visit(node.expression);
+      GOTOReturnStmt retStmt;
+      retStmt = new GOTOReturnStmt((IRExpr)expr.get(0));
+      currentFunction.instr.add(retStmt);
+      return defaultReturn;
    }
 }
