@@ -167,6 +167,15 @@ public class GOTOConstructionPass extends Pass<ArrayList<GOTO>> {
    }
 
    @Override
+   public ArrayList<GOTO> visitUnaryExp(UnaryExp node){
+      ArrayList<GOTO> result = new ArrayList<GOTO>();
+      ArrayList<GOTO> exprResult = visit(node.exp);
+      IRExpr expr = (IRExpr)exprResult.get(0);
+      result.add(new UnaryOp(node.prefix,expr,expr.type));
+      return result;
+   }
+
+   @Override
    public ArrayList<GOTO> visitLiteral(Literal node){
       ArrayList<GOTO> result = new ArrayList<GOTO>();
       GOTOType gotoType = typecheckTypeToGOTO(node.typeAnnotation);
@@ -231,5 +240,20 @@ public class GOTOConstructionPass extends Pass<ArrayList<GOTO>> {
       IRExpr rightExpr = (IRExpr)right.get(0);
       result.add(new GOTOBinOp("==",leftExpr,rightExpr,leftExpr.type));
       return result;
+   }
+
+   @Override
+   public ArrayList<GOTO> visitWhileStmt(WhileStmt node){
+      String labelStart;
+      String labelFinish;
+      ArrayList<GOTO> expr = visit(node.expression);
+      labelStart = GOTOprog.getUniqueLabelName();
+      labelFinish = GOTOprog.getUniqueLabelName();
+      currentFunction.instr.add(new GOTOIfStmt((IRExpr)expr.get(0),labelStart,labelFinish));
+      currentFunction.instr.add(new Label(labelStart));
+      visit(node.statement);
+      currentFunction.instr.add(new GOTOIfStmt((IRExpr)expr.get(0),labelStart,labelFinish));
+      currentFunction.instr.add(new Label(labelFinish));
+      return defaultReturn;
    }
 }
