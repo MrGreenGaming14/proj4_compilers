@@ -192,4 +192,44 @@ public class GOTOConstructionPass extends Pass<ArrayList<GOTO>> {
       currentFunction.instr.add(retStmt);
       return defaultReturn;
    }
+
+   @Override
+   public ArrayList<GOTO> visitIfStmt(IfStmt node){
+      String labelTrue;
+      String labelFalse;
+      String labelFinish;
+      ArrayList<GOTO> expr = visit(node.expression);
+      if(node.else_statement instanceof EmptyStmt){ //only if
+         labelTrue = GOTOprog.getUniqueLabelName();
+         labelFinish = GOTOprog.getUniqueLabelName();
+         currentFunction.instr.add(new GOTOIfStmt((IRExpr)expr.get(0),labelTrue,labelFinish));
+         currentFunction.instr.add(new Label(labelTrue));
+         visit(node.if_statement);
+         currentFunction.instr.add(new Label(labelFinish));
+      }
+      else{ //if + else
+         labelTrue = GOTOprog.getUniqueLabelName();
+         labelFalse = GOTOprog.getUniqueLabelName();
+         labelFinish = GOTOprog.getUniqueLabelName();
+         currentFunction.instr.add(new GOTOIfStmt((IRExpr)expr.get(0),labelTrue,labelFalse));
+         currentFunction.instr.add(new Label(labelTrue));
+         visit(node.if_statement);
+         currentFunction.instr.add(new Goto(labelFinish));
+         currentFunction.instr.add(new Label(labelFalse));
+         visit(node.else_statement);
+         currentFunction.instr.add(new Label(labelFinish));
+      }
+      return defaultReturn;
+   }
+
+   @Override
+   public ArrayList<GOTO> visitAssignExp(AssignExp node){
+      ArrayList<GOTO> result = new ArrayList<GOTO>();
+      ArrayList<GOTO> left = visit(node.left);
+      ArrayList<GOTO> right = visit(node.right);
+      IRExpr leftExpr = (IRExpr)left.get(0);
+      IRExpr rightExpr = (IRExpr)right.get(0);
+      result.add(new GOTOBinOp("==",leftExpr,rightExpr,leftExpr.type));
+      return result;
+   }
 }

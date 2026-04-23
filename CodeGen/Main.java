@@ -72,6 +72,18 @@ public class Main {
                         Call call = (Call)instr;
                         System.out.print("Call to function: "+call.func);
                     }
+                    else if(instr instanceof GOTOIfStmt){
+                        GOTOIfStmt ifStmt = (GOTOIfStmt)instr;
+                        System.out.print("If Stmt: labelTrue: "+ifStmt.trueLabel+" | labelFalse: "+ifStmt.falseLabel);
+                    }
+                    else if(instr instanceof Goto){
+                        Goto gotoStmt = (Goto)instr;
+                        System.out.print("Goto label: "+gotoStmt.label);
+                    }
+                    else if(instr instanceof Label){
+                        Label label = (Label)instr;
+                        System.out.print("Label - "+label.name+":");
+                    }
                     else{
                         System.out.print("unknown type");
                     }

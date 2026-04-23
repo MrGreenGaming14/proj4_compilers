@@ -8,6 +8,16 @@ fun int test_func () {
             var int a = 3;
             var int b = 2;
             var int c = a + b;
+            if (a = b) {
+                if(b = c){
+                    var int d = 0;
+                }
+            }
+            else{
+                if(b = c){
+                    var int e = 1;
+                }
+            }
             return a;
         }
         return a;
