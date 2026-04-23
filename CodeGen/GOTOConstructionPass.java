@@ -4,7 +4,7 @@ import Typecheck.TypeCheckException;
 import Absyn.*;
 import java.util.ArrayList;
 
-public class GOTOConstructionPass extends Pass<ArrayList<GOTO>> {
+public class GOTOConstructionPass extends Pass<IRExpr> {
 
    public String typecheckTypeToC(TypecheckType tcType){
       String retType = "";
@@ -60,7 +60,7 @@ public class GOTOConstructionPass extends Pass<ArrayList<GOTO>> {
       return gotoVarType;
    }
 
-   protected ArrayList<GOTO> defaultReturn = null;
+   protected IRExpr defaultReturn = null;
 
    public Program GOTOprog;
    public Function mainFunction;
@@ -73,14 +73,14 @@ public class GOTOConstructionPass extends Pass<ArrayList<GOTO>> {
    }
 
    @Override
-   public ArrayList<GOTO> visitVarDecl(VarDecl node){
+   public IRExpr visitVarDecl(VarDecl node){
       visit(node.type);
-      ArrayList<GOTO> init = visit(node.init);
+      IRExpr init = visit(node.init);
       Typecheck.Types.TypecheckType varType = node.type.typeAnnotation;
       GOTOType gotoVarType = typecheckTypeToGOTO(varType);
       Assign assign;
       if(init != null){
-         assign = new Assign(new Var(node.name, gotoVarType), (IRExpr)init.get(0));
+         assign = new Assign(new Var(node.name, gotoVarType), init);
       }
       else{
          assign = new Assign(new Var(node.name, gotoVarType), null);
@@ -90,7 +90,7 @@ public class GOTOConstructionPass extends Pass<ArrayList<GOTO>> {
    }
 
    @Override
-   public ArrayList<GOTO> visitFunDecl(FunDecl node){
+   public IRExpr visitFunDecl(FunDecl node){
       TypecheckType tcType;
       GOTOType gotoType;
       String retType = "";
@@ -114,104 +114,49 @@ public class GOTOConstructionPass extends Pass<ArrayList<GOTO>> {
    }
 
    @Override
-   public ArrayList<GOTO> visitCompStmt(CompStmt node){
-      ArrayList<GOTO> result = new ArrayList<GOTO>();
-      ArrayList<GOTO> decl_list;
-      ArrayList<GOTO> stmt_list;
-      decl_list = visit(node.decl_list);
-      stmt_list = visit(node.stmt_list);
-      if(decl_list != null){
-         result.addAll(decl_list);
-      }
-      if(stmt_list != null){
-         result.addAll(stmt_list);
-      }
-      return result;
-   }
-
-   @Override
-   public ArrayList<GOTO> visitDeclList(DeclList node){
+   public IRExpr visitBinOp(BinOp node){
       //System.out.println(node.print(0));
-      for(Decl d : node.list){
-         visit(d);
-      }
-      return defaultReturn;
-   }
-
-   /*
-   @Override
-   public ArrayList<GOTO> visitAssignExp(AssignExp node){
-      ArrayList<GOTO> result = new ArrayList<GOTO>();
-      ArrayList<GOTO> left = visit(node.left);
-      ArrayList<GOTO> right = visit(node.right);
-      Assign assign = new Assign((Var)left.get(0), (IRExpr)right.get(0));
-      result.add(assign);
-      if(assign != null){
-         System.out.println(assign+" | "+(Var)left.get(0)+" | "+(IRExpr)right.get(0));
-      }
-      return result;
-   }
-   */
-
-   @Override
-   public ArrayList<GOTO> visitBinOp(BinOp node){
-      //System.out.println(node.print(0));
-      ArrayList<GOTO> result = new ArrayList<GOTO>();
-      ArrayList<GOTO> left = visit(node.left);
-      ArrayList<GOTO> right = visit(node.right);
-      IRExpr leftExpr = (IRExpr)left.get(0);
-      IRExpr rightExpr = (IRExpr)right.get(0);
-      GOTOBinOp gbo = new GOTOBinOp(node.oper, leftExpr, rightExpr, leftExpr.type);
-      result.add(gbo);
-      return result;
+      IRExpr left = visit(node.left);
+      IRExpr right = visit(node.right);
+      return new GOTOBinOp(node.oper, left, right, left.type);
    }
 
    @Override
-   public ArrayList<GOTO> visitUnaryExp(UnaryExp node){
-      ArrayList<GOTO> result = new ArrayList<GOTO>();
-      ArrayList<GOTO> exprResult = visit(node.exp);
-      IRExpr expr = (IRExpr)exprResult.get(0);
-      result.add(new UnaryOp(node.prefix,expr,expr.type));
-      return result;
+   public IRExpr visitUnaryExp(UnaryExp node){
+      IRExpr expr = visit(node.exp);
+      return new UnaryOp(node.prefix,expr,expr.type);
    }
 
    @Override
-   public ArrayList<GOTO> visitLiteral(Literal node){
-      ArrayList<GOTO> result = new ArrayList<GOTO>();
+   public IRExpr visitLiteral(Literal node){
       GOTOType gotoType = typecheckTypeToGOTO(node.typeAnnotation);
-      GOTOLiteral lit = new GOTOLiteral(node.value, gotoType);
-      result.add(lit);
-      return result;
+      return new GOTOLiteral(node.value, gotoType);
    }
 
    @Override
-   public ArrayList<GOTO> visitID(ID node){
-      ArrayList<GOTO> result = new ArrayList<GOTO>();
+   public IRExpr visitID(ID node){
       GOTOType gotoType = typecheckTypeToGOTO(node.typeAnnotation);
-      Var var = new Var(node.value, gotoType);
-      result.add(var);
-      return result;
+      return new Var(node.value, gotoType);
    }
 
    @Override
-   public ArrayList<GOTO> visitReturnStmt(ReturnStmt node){
-      ArrayList<GOTO> expr = visit(node.expression);
-      GOTOReturnStmt retStmt;
-      retStmt = new GOTOReturnStmt((IRExpr)expr.get(0));
+   public IRExpr visitReturnStmt(ReturnStmt node){
+      IRExpr expr = visit(node.expression);
+      GOTOReturnStmt retStmt = new GOTOReturnStmt(expr);
       currentFunction.instr.add(retStmt);
       return defaultReturn;
    }
 
    @Override
-   public ArrayList<GOTO> visitIfStmt(IfStmt node){
+   public IRExpr visitIfStmt(IfStmt node){
       String labelTrue;
       String labelFalse;
       String labelFinish;
-      ArrayList<GOTO> expr = visit(node.expression);
+      IRExpr expr = visit(node.expression);
       if(node.else_statement instanceof EmptyStmt){ //only if
          labelTrue = GOTOprog.getUniqueLabelName();
          labelFinish = GOTOprog.getUniqueLabelName();
-         currentFunction.instr.add(new GOTOIfStmt((IRExpr)expr.get(0),labelTrue,labelFinish));
+         currentFunction.instr.add(new GOTOIfStmt(expr,labelTrue,labelFinish));
          currentFunction.instr.add(new Label(labelTrue));
          visit(node.if_statement);
          currentFunction.instr.add(new Label(labelFinish));
@@ -220,7 +165,7 @@ public class GOTOConstructionPass extends Pass<ArrayList<GOTO>> {
          labelTrue = GOTOprog.getUniqueLabelName();
          labelFalse = GOTOprog.getUniqueLabelName();
          labelFinish = GOTOprog.getUniqueLabelName();
-         currentFunction.instr.add(new GOTOIfStmt((IRExpr)expr.get(0),labelTrue,labelFalse));
+         currentFunction.instr.add(new GOTOIfStmt(expr,labelTrue,labelFalse));
          currentFunction.instr.add(new Label(labelTrue));
          visit(node.if_statement);
          currentFunction.instr.add(new Goto(labelFinish));
@@ -232,27 +177,23 @@ public class GOTOConstructionPass extends Pass<ArrayList<GOTO>> {
    }
 
    @Override
-   public ArrayList<GOTO> visitAssignExp(AssignExp node){
-      ArrayList<GOTO> result = new ArrayList<GOTO>();
-      ArrayList<GOTO> left = visit(node.left);
-      ArrayList<GOTO> right = visit(node.right);
-      IRExpr leftExpr = (IRExpr)left.get(0);
-      IRExpr rightExpr = (IRExpr)right.get(0);
-      result.add(new GOTOBinOp("==",leftExpr,rightExpr,leftExpr.type));
-      return result;
+   public IRExpr visitAssignExp(AssignExp node){
+      IRExpr left = visit(node.left);
+      IRExpr right = visit(node.right);
+      return new GOTOBinOp("==",left,right,left.type);
    }
 
    @Override
-   public ArrayList<GOTO> visitWhileStmt(WhileStmt node){
+   public IRExpr visitWhileStmt(WhileStmt node){
       String labelStart;
       String labelFinish;
-      ArrayList<GOTO> expr = visit(node.expression);
+      IRExpr expr = visit(node.expression);
       labelStart = GOTOprog.getUniqueLabelName();
       labelFinish = GOTOprog.getUniqueLabelName();
-      currentFunction.instr.add(new GOTOIfStmt((IRExpr)expr.get(0),labelStart,labelFinish));
+      currentFunction.instr.add(new GOTOIfStmt(expr,labelStart,labelFinish));
       currentFunction.instr.add(new Label(labelStart));
       visit(node.statement);
-      currentFunction.instr.add(new GOTOIfStmt((IRExpr)expr.get(0),labelStart,labelFinish));
+      currentFunction.instr.add(new GOTOIfStmt(expr,labelStart,labelFinish));
       currentFunction.instr.add(new Label(labelFinish));
       return defaultReturn;
    }
