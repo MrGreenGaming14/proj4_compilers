@@ -167,6 +167,12 @@ public class JudgementsPass extends ScopePass<TypecheckType> {
          type = new VOID();
       }
       else{
+         if(this.currentscope.hasVar(node.value)){
+            type = this.currentscope.getVar(node.value).type;
+         }
+         else if(this.currentscope.hasFun(node.value)){
+            type = this.currentscope.getFun(node.value).returnType;
+         }
          type = this.currentscope.getVar(node.value).type;
       }
       node.typeAnnotation = type;
