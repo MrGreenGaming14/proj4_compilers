@@ -78,14 +78,20 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
       IRExpr init = visit(node.init);
       Typecheck.Types.TypecheckType varType = node.type.typeAnnotation;
       GOTOType gotoVarType = typecheckTypeToGOTO(varType);
-      Assign assign;
       if(init != null){
-         assign = new Assign(new Var(node.name, gotoVarType), init);
+         if(gotoVarType == GOTOType.INTARRAY){
+            ArrayAlloc arrayAlloc = new ArrayAlloc(new Var(node.name, gotoVarType), init);
+            currentFunction.instr.add(arrayAlloc);
+         }
+         else{
+            Assign assign = new Assign(new Var(node.name, gotoVarType), init);
+            currentFunction.instr.add(assign);
+         }
       }
       else{
-         assign = new Assign(new Var(node.name, gotoVarType), null);
+         Assign assign = new Assign(new Var(node.name, gotoVarType), null);
+         currentFunction.instr.add(assign);
       }
-      currentFunction.instr.add(assign);
       return defaultReturn;
    }
 
@@ -197,4 +203,22 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
       currentFunction.instr.add(new Label(labelFinish));
       return defaultReturn;
    }
+
+   @Override
+   public IRExpr visitExprStmt(ExprStmt node){
+      IRExpr expr = visit(node.expression);
+      System.out.println(node.print(0));
+      if(expr instanceof GOTOBinOp){ //i believe this has to be an assign
+         GOTOBinOp binOpExpr = (GOTOBinOp)expr;
+         Var leftVar = (Var)binOpExpr.left;
+         IRExpr rightExpr = (IRExpr)binOpExpr.right;
+         currentFunction.instr.add(new Assign(leftVar, rightExpr));
+      }
+      else if(expr instanceof UnaryOp){
+         UnaryOp unOpExpr = (UnaryOp)expr;
+         currentFunction.instr.add(unOpExpr);
+      }
+      return defaultReturn;
+   }
+   
 }

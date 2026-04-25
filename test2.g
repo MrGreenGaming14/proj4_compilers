@@ -1,5 +1,6 @@
 var int r1_int = 2;
 var string r1_str = "string";
+var int[3][2] r3_arr1 = {{1,2},{1,2},{1,2}};
 fun int test_func () {
     var int a = 1;
     fun int test_func2 (){
@@ -26,6 +27,9 @@ fun int test_func () {
         }
         return a;
     }
+    a = a + 1;
+    +a;
+    a = test_func2();
     return a;
 }
 var int f = 0;

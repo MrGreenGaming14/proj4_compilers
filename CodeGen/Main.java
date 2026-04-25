@@ -65,7 +65,6 @@ public class Main {
                         System.out.print("Assign for var: "+assign.target.name);
                     }
                     else if(instr instanceof GOTOReturnStmt){
-                        GOTOReturnStmt retStmt = (GOTOReturnStmt)instr;
                         System.out.print("Return");
                     }
                     else if(instr instanceof Call){
@@ -74,7 +73,7 @@ public class Main {
                     }
                     else if(instr instanceof GOTOIfStmt){
                         GOTOIfStmt ifStmt = (GOTOIfStmt)instr;
-                        System.out.print("If Stmt: labelTrue: "+ifStmt.trueLabel+" | labelFalse: "+ifStmt.falseLabel);
+                        System.out.print("If Stmt: condition: "+ifStmt.cond.getClass()+" | labelTrue: "+ifStmt.trueLabel+" | labelFalse: "+ifStmt.falseLabel);
                     }
                     else if(instr instanceof Goto){
                         Goto gotoStmt = (Goto)instr;
@@ -84,8 +83,14 @@ public class Main {
                         Label label = (Label)instr;
                         System.out.print("Label - "+label.name+":");
                     }
+                    else if(instr instanceof UnaryOp){
+                        UnaryOp unOp = (UnaryOp)instr;
+                        Var var = (Var)unOp.expr;
+                        System.out.print("Unary Op on var: "+var.name);
+                    }
                     else{
-                        System.out.print("unknown type");
+                        System.out.print("unknown type: ");
+                        System.out.print(instr.getClass());
                     }
                     System.out.println();
                     i++;
