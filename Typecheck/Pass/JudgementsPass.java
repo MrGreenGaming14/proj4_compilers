@@ -201,7 +201,6 @@ public class JudgementsPass extends ScopePass<TypecheckType> {
    //Rule 9:
    @Override
    public TypecheckType visitFunExp(Absyn.FunExp node){
-      System.out.println(node.print(0));
       visit(node.name);
       TypecheckType expType = visit(node.params);
       Absyn.ID funcId = (Absyn.ID)node.name;
@@ -214,6 +213,7 @@ public class JudgementsPass extends ScopePass<TypecheckType> {
       else if(!funSym.params.canAccept(expType)){
          throw new TypeCheckException("Function "+funcId.value+" given invalid parameters");
       }
+      node.typeAnnotation = this.currentscope.getFun(funcId.value).returnType;
       return this.currentscope.getFun(funcId.value).returnType;
    }
 

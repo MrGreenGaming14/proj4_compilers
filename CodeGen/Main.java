@@ -96,6 +96,9 @@ public class Main {
                     i++;
                 }
             }
+            Emitter.ProgramEmitter pe = new Emitter.ProgramEmitter(GOTOprog.globals, GOTOprog.funcs);
+            System.out.println("\n\n\nProgram:\n");
+            System.out.println(pe.emitProgram());
         } catch (TypeCheckException e) {
             System.err.println("TypeCheckError: " + e.getMessage());
         }

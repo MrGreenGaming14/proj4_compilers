@@ -56,7 +56,10 @@ public class GOTOVariableRenamingPass extends ScopePass<Void> {
 
    @Override
    public Void visitID(ID node){
-      node.value = this.currentscope.getVar(node.value).new_name;
+      if(this.currentscope.hasVar(node.value)){ //if var
+         node.value = this.currentscope.getVar(node.value).new_name;
+      }
+      //otherwise is a function
       return defaultReturn;
    }
 

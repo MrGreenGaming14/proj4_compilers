@@ -88,25 +88,17 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
             currentFunction.instr.add(assign);
          }
       }
-      else{
-         Assign assign = new Assign(new Var(node.name, gotoVarType), null);
-         currentFunction.instr.add(assign);
-      }
       return defaultReturn;
    }
 
    @Override
    public IRExpr visitFunDecl(FunDecl node){
       TypecheckType tcType;
-      GOTOType gotoType;
       String retType = "";
 
       visit(node.type);
       tcType = node.type.typeAnnotation;
       retType = typecheckTypeToC(tcType);
-      gotoType = typecheckTypeToGOTO(tcType);
-
-      currentFunction.instr.add(new Call(node.name, gotoType));
 
       Function originalFunction = currentFunction;
       currentFunction = new Function(node.name, retType);
@@ -184,6 +176,7 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
 
    @Override
    public IRExpr visitAssignExp(AssignExp node){
+      //System.out.println(node.print(0));
       IRExpr left = visit(node.left);
       IRExpr right = visit(node.right);
       return new GOTOBinOp("==",left,right,left.type);
@@ -207,7 +200,6 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
    @Override
    public IRExpr visitExprStmt(ExprStmt node){
       IRExpr expr = visit(node.expression);
-      System.out.println(node.print(0));
       if(expr instanceof GOTOBinOp){ //i believe this has to be an assign
          GOTOBinOp binOpExpr = (GOTOBinOp)expr;
          Var leftVar = (Var)binOpExpr.left;
@@ -219,6 +211,19 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
          currentFunction.instr.add(unOpExpr);
       }
       return defaultReturn;
+   }
+
+   @Override
+   public IRExpr visitFunExp(FunExp node){
+      TypecheckType tcType;
+      GOTOType gotoType;
+
+      tcType = node.typeAnnotation;
+      gotoType = typecheckTypeToGOTO(tcType);
+
+      ID funcName = (ID)node.name;
+
+      return new Call(funcName.value, gotoType);
    }
    
 }
