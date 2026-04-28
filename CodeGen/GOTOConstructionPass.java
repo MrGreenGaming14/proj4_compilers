@@ -55,6 +55,7 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
          gotoVarType = GOTOType.INTARRAY;
       }
       else{
+         System.out.println(varType.getClass());
          throw new TypeCheckException("CodeGen only accepts variables of int, string, or int array");
       }
       return gotoVarType;
@@ -74,6 +75,11 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
 
    @Override
    public IRExpr visitVarDecl(VarDecl node){
+      /*
+      if(node.name.equals("_x3")){
+         System.out.println(node.print(0));
+      }
+      */
       visit(node.type);
       IRExpr init = visit(node.init);
       Typecheck.Types.TypecheckType varType = node.type.typeAnnotation;
@@ -87,6 +93,10 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
             Assign assign = new Assign(new Var(node.name, gotoVarType), init);
             currentFunction.instr.add(assign);
          }
+      }
+      else{
+         Assign assign = new Assign(new Var(node.name, gotoVarType), null);
+         currentFunction.instr.add(assign);
       }
       return defaultReturn;
    }
@@ -123,6 +133,18 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
    public IRExpr visitUnaryExp(UnaryExp node){
       IRExpr expr = visit(node.exp);
       return new UnaryOp(node.prefix,expr,expr.type);
+   }
+
+   @Override
+   public IRExpr visitDecLit(DecLit node){
+      GOTOType gotoType = typecheckTypeToGOTO(node.typeAnnotation);
+      return new GOTOLiteral(node.value, gotoType);
+   }
+
+   @Override
+   public IRExpr visitStrLit(StrLit node){
+      GOTOType gotoType = typecheckTypeToGOTO(node.typeAnnotation);
+      return new GOTOLiteral(node.value, gotoType);
    }
 
    @Override

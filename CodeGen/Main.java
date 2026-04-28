@@ -14,6 +14,78 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
 
 public class Main {
+
+    public static void printInstr(GOTO instr){
+        if(instr instanceof Assign){
+            Assign assign = (Assign)instr;
+            System.out.print("Assign for var: "+assign.target.name+" = ");
+            printExpr(assign.value);
+        }
+        else if(instr instanceof GOTOReturnStmt){
+            System.out.print("Return");
+        }
+        else if(instr instanceof Call){
+            Call call = (Call)instr;
+            System.out.print("Call to function: "+call.func);
+        }
+        else if(instr instanceof GOTOIfStmt){
+            GOTOIfStmt ifStmt = (GOTOIfStmt)instr;
+            System.out.print("If Stmt: condition: ");
+            printExpr(ifStmt.cond);
+            System.out.print(" | labelTrue: "+ifStmt.trueLabel+" | labelFalse: "+ifStmt.falseLabel);
+        }
+        else if(instr instanceof Goto){
+            Goto gotoStmt = (Goto)instr;
+            System.out.print("Goto label: "+gotoStmt.label);
+        }
+        else if(instr instanceof Label){
+            Label label = (Label)instr;
+            System.out.print("Label - "+label.name+":");
+        }
+        else if(instr instanceof UnaryOp){
+            UnaryOp unOp = (UnaryOp)instr;
+            Var var = (Var)unOp.expr;
+            System.out.print("Unary Op on var: "+var.name);
+        }
+        else{
+            System.out.print("unknown type: ");
+            System.out.print(instr.getClass());
+        }
+    }
+
+    public static void printExpr(IRExpr expr){
+        if(expr == null){
+            System.out.print("NULL");
+        }
+        else if(expr instanceof Var){
+            Var var = (Var)expr;
+            System.out.print(var.name);
+        }
+        else if(expr instanceof GOTOLiteral){
+            GOTOLiteral gtl = (GOTOLiteral)expr;
+            System.out.print(gtl.value);
+        }
+        else if(expr instanceof GOTOBinOp){
+            GOTOBinOp gbo = (GOTOBinOp)expr;
+            printExpr(gbo.left);
+            System.out.print(" "+gbo.op+" ");
+            printExpr(gbo.right);
+        }
+        else if(expr instanceof UnaryOp){
+            UnaryOp uo = (UnaryOp)expr;
+            System.out.print(uo.op);
+            printExpr(uo.expr);
+        }
+        else if(expr instanceof Call){
+            Call call = (Call)expr;
+            System.out.print(call.func+"()");
+        }
+        else if(expr instanceof ArrayLoad){
+            ArrayLoad al = (ArrayLoad)expr;
+            //????
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         CharStream input = CharStreams.fromFileName(args[0]);
 
@@ -60,38 +132,7 @@ public class Main {
                 int i = 1;
                 for(GOTO instr : func.instr){
                     System.out.print("instr "+i+": ");
-                    if(instr instanceof Assign){
-                        Assign assign = (Assign)instr;
-                        System.out.print("Assign for var: "+assign.target.name);
-                    }
-                    else if(instr instanceof GOTOReturnStmt){
-                        System.out.print("Return");
-                    }
-                    else if(instr instanceof Call){
-                        Call call = (Call)instr;
-                        System.out.print("Call to function: "+call.func);
-                    }
-                    else if(instr instanceof GOTOIfStmt){
-                        GOTOIfStmt ifStmt = (GOTOIfStmt)instr;
-                        System.out.print("If Stmt: condition: "+ifStmt.cond.getClass()+" | labelTrue: "+ifStmt.trueLabel+" | labelFalse: "+ifStmt.falseLabel);
-                    }
-                    else if(instr instanceof Goto){
-                        Goto gotoStmt = (Goto)instr;
-                        System.out.print("Goto label: "+gotoStmt.label);
-                    }
-                    else if(instr instanceof Label){
-                        Label label = (Label)instr;
-                        System.out.print("Label - "+label.name+":");
-                    }
-                    else if(instr instanceof UnaryOp){
-                        UnaryOp unOp = (UnaryOp)instr;
-                        Var var = (Var)unOp.expr;
-                        System.out.print("Unary Op on var: "+var.name);
-                    }
-                    else{
-                        System.out.print("unknown type: ");
-                        System.out.print(instr.getClass());
-                    }
+                    printInstr(instr);
                     System.out.println();
                     i++;
                 }

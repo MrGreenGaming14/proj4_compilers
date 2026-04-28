@@ -152,11 +152,13 @@ public class JudgementsPass extends ScopePass<TypecheckType> {
 
    @Override
    public TypecheckType visitDecLit(Absyn.DecLit node){
+      node.typeAnnotation = new INT();
       return new INT();
    }
 
    @Override
    public TypecheckType visitStrLit(Absyn.StrLit node){
+      node.typeAnnotation = new STRING();
       return new STRING();
    }
 
