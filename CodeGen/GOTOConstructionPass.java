@@ -3,6 +3,7 @@ import Typecheck.Types.*;
 import Typecheck.TypeCheckException;
 import Absyn.*;
 import java.util.ArrayList;
+import java.util.List;
 
 public class GOTOConstructionPass extends Pass<IRExpr> {
 
@@ -131,7 +132,6 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
 
    @Override
    public IRExpr visitUnaryExp(UnaryExp node){
-      System.out.println(node.print(0));
       IRExpr expr = visit(node.exp);
       return new UnaryOp(node.prefix,expr,expr.type);
    }
@@ -222,7 +222,6 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
 
    @Override
    public IRExpr visitExprStmt(ExprStmt node){
-      System.out.println(node.print(0));
       IRExpr expr = visit(node.expression);
       if(expr instanceof GOTOBinOp){
          GOTOBinOp binOpExpr = (GOTOBinOp)expr;
@@ -248,7 +247,15 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
       ID funcName = (ID)node.name;
 
       if(funcName.value.equals("printf")){
-         return new Call(funcName.value, GOTOType.INT);
+         List<IRExpr> args = new ArrayList<IRExpr>();
+         for(Exp exp : node.params.list){
+            args.add(visit(exp));
+         }
+         GOTOLiteral formatGOTO = (GOTOLiteral)args.get(0);
+         String format = (String)formatGOTO.value;
+         args.remove(0);
+         currentFunction.instr.add(new Printf(format, args));
+         return defaultReturn;
       }
 
       tcType = node.typeAnnotation;
@@ -274,7 +281,6 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
 
    @Override
    public IRExpr visitUnionDecl(UnionDecl node){
-      System.out.println(node.print(0));
       DeclList absynFields = node.body;
       ArrayList<StructField> variants = new ArrayList<StructField>();
       UnionMember sm;

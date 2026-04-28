@@ -47,6 +47,14 @@ public class Main {
             Var var = (Var)unOp.expr;
             System.out.print("Unary Op on var: "+var.name);
         }
+        else if(instr instanceof Printf){
+            Printf printf = (Printf)instr;
+            System.out.print("Printf call for arguments: "+printf.format+", ");
+            for(int i = 1; i < printf.args.size(); i++){
+                printExpr(printf.args.get(0));
+                System.out.print(", ");
+            }
+        }
         else{
             System.out.print("unknown type: ");
             System.out.print(instr.getClass());

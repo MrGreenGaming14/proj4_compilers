@@ -9,10 +9,10 @@ union r6_union {
     int[][] x;
     int y;
 }
-r6_union r6_union_element = 4;
+//var r6_union r6_union_element = 4;
 fun int test_func () {
     var int a = 1;
-    fun int test_func2 (){
+    fun int test_func2 (int l, int m){
         var int a = 2;
         var int b = 3;
         fun int test_func3(){
@@ -38,7 +38,7 @@ fun int test_func () {
     }
     a = a + 1;
     +a;
-    a = test_func2();
+    a = test_func2(2, 3);
     return a;
 }
 var int f = 0;

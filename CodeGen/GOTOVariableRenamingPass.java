@@ -63,4 +63,10 @@ public class GOTOVariableRenamingPass extends ScopePass<Void> {
       return defaultReturn;
    }
 
+   @Override
+   public Void visitFunExp(FunExp node){
+      System.out.println(node.print(0));
+      return defaultReturn;
+   }
+
 }
