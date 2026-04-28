@@ -7,6 +7,18 @@ import java.util.List;
 
 public class GOTOConstructionPass extends Pass<IRExpr> {
 
+   protected IRExpr defaultReturn = null;
+
+   public Program GOTOprog;
+   public Function mainFunction;
+   protected Function currentFunction;
+
+   public GOTOConstructionPass(Program GOTOprog) {
+      this.GOTOprog = GOTOprog;
+      this.mainFunction = new Function("main","void");
+      this.currentFunction = mainFunction;
+   }
+
    public String typecheckTypeToC(TypecheckType tcType){
       String retType = "";
       String stars = "";
@@ -62,33 +74,36 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
       return gotoVarType;
    }
 
-   protected IRExpr defaultReturn = null;
-
-   public Program GOTOprog;
-   public Function mainFunction;
-   protected Function currentFunction;
-
-   public GOTOConstructionPass(Program GOTOprog) {
-      this.GOTOprog = GOTOprog;
-      this.mainFunction = new Function("main","void");
-      this.currentFunction = mainFunction;
+   public int initializeArray(Var arrVar, ArrayExpr arrExpr, int i){
+      int index = i;
+      for(IRExpr elem : arrExpr.initElems){
+         if(elem instanceof ArrayExpr){ //must recurse
+            index = initializeArray(arrVar, (ArrayExpr)elem, index);
+         }
+         else{ //must be int
+            currentFunction.instr.add(new ArrayStore(arrVar, new GOTOLiteral(index, GOTOType.INT), elem));
+            index++;
+         }
+      }
+      return index;
    }
 
    @Override
    public IRExpr visitVarDecl(VarDecl node){
-      /*
       if(node.name.equals("_x3")){
          System.out.println(node.print(0));
       }
-      */
       visit(node.type);
       IRExpr init = visit(node.init);
       Typecheck.Types.TypecheckType varType = node.type.typeAnnotation;
       GOTOType gotoVarType = typecheckTypeToGOTO(varType);
       if(init != null){
          if(gotoVarType == GOTOType.INTARRAY){
-            ArrayAlloc arrayAlloc = new ArrayAlloc(new Var(node.name, gotoVarType), init);
-            currentFunction.instr.add(arrayAlloc);
+            System.out.println(node.print(0));
+            Var arrVar = new Var(node.name, GOTOType.INT);
+            ArrayExpr arrExpr = (ArrayExpr)init;
+            currentFunction.instr.add(new ArrayAlloc(arrVar, new GOTOLiteral(arrExpr.size, GOTOType.INT)));
+            initializeArray(arrVar, arrExpr, 0);
          }
          else{
             Assign assign = new Assign(new Var(node.name, gotoVarType), init);
@@ -294,9 +309,25 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
    }
 
    @Override
-	public IRExpr visitStmt(Stmt node) {
-      System.out.println(node.print(0));
-		return defaultReturn;
-	}
+   public IRExpr visitType(Type node){
+      return defaultReturn;
+   }
+
+   @Override
+   public IRExpr visitExpList(ExpList node){
+      ArrayList<IRExpr> arrList = new ArrayList<IRExpr>();
+      for(Exp exp : node.list){
+         arrList.add(visit(exp));
+      }
+      ArrayExpr result = new ArrayExpr(arrList);
+      if(arrList.get(0) instanceof ArrayExpr){
+         ArrayExpr innerArr = (ArrayExpr)arrList.get(0);
+         result.size = arrList.size() * innerArr.size;
+      }
+      else{
+         result.size = arrList.size();
+      }
+      return result;
+   }
    
 }

@@ -127,7 +127,7 @@ public class Emitter {
             String ret = "";
             String idx = GOTOvisit(instr.index);
             String val = GOTOvisit(instr.value);
-            ret += "*(" + GOTOvisit(instr.array) + " + " + idx + ") = " + val + ";\n";
+            ret += "*(" + GOTOvisit(instr.array) + " + " + idx + ") = " + val + ";";
             return ret;
         }
 
@@ -136,7 +136,7 @@ public class Emitter {
             String arrayName = GOTOvisit(instr.array);
             String size = GOTOvisit(instr.size);
             String type = instr.array.type.toString();
-                return String.format("%s = realloc(%s, sizeof(%s) * %s);\n",
+                return String.format("%s = realloc(%s, sizeof(%s) * %s);",
                                      arrayName,
                                      arrayName,
                                      type,

@@ -17,9 +17,6 @@ public interface GOTOVisitor<T> {
     T visitPrintf(Printf instr);
     T visitGOTO(GOTONode instr);
 
-    // Arrays
-    default T visitArrayAllocInit(ArrayAllocInit instr) { return visitGOTO(instr); }
-
     // Structs
     default T visitStructTypeDef(StructTypeDef instr)   { return visitGOTO(instr); }
     default T visitStructInit(StructInit instr)         { return visitGOTO(instr); }

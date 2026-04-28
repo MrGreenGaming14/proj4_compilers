@@ -493,26 +493,12 @@ class GOTOReturnStmt extends IRStmt {
 }
 // ─── ARRAYS ──────────────────────────────────────────────────────────────────
 
-/**
- * Array allocation with initializer list.
- *
- * Example emitted C:
- * int arr[] = {1, 2, 3};
- */
-class ArrayAllocInit extends IRStmt {
-    public final Var array;
-    public final IRExpr size;
+
+class ArrayExpr extends IRExpr {
     public final ArrayList<IRExpr> initElems;
-
-    public ArrayAllocInit(Var array, IRExpr size, ArrayList<IRExpr> initElems) {
-        this.array     = array;
-        this.size      = size;
+    public int size = 0;
+    public ArrayExpr(ArrayList<IRExpr> initElems){
         this.initElems = initElems;
-    }
-
-    @Override
-    public <T> T accept(GOTOVisitor<T> v) {
-        return v.visitArrayAllocInit(this);
     }
 }
 

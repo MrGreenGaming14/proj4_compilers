@@ -26,6 +26,7 @@ public class GOTOVariableRenamingPass extends ScopePass<Void> {
          gotoVarType = GOTOType.INTARRAY;
       }
       else{
+         System.out.println(varType.getClass());
          throw new TypeCheckException("CodeGen only accepts variables of int, string, or int array");
       }
       return gotoVarType;
@@ -60,12 +61,6 @@ public class GOTOVariableRenamingPass extends ScopePass<Void> {
          node.value = this.currentscope.getVar(node.value).new_name;
       }
       //otherwise is a function
-      return defaultReturn;
-   }
-
-   @Override
-   public Void visitFunExp(FunExp node){
-      System.out.println(node.print(0));
       return defaultReturn;
    }
 
