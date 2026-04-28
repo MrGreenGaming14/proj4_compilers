@@ -164,6 +164,9 @@ public class JudgementsPass extends ScopePass<TypecheckType> {
 
    @Override
    public TypecheckType visitID(Absyn.ID node){
+      if(node.value.equals("printf")){
+         return new VOID();
+      }
       TypecheckType type = new VOID();
       if(!node.value.equals("null")){
          if(this.currentscope.hasVar(node.value)){
@@ -206,6 +209,9 @@ public class JudgementsPass extends ScopePass<TypecheckType> {
       visit(node.name);
       TypecheckType expType = visit(node.params);
       Absyn.ID funcId = (Absyn.ID)node.name;
+      if(funcId.value.equals("printf")){
+         return new VOID();
+      }
       FunSymbol funSym = this.currentscope.getFun(funcId.value);
       if(expType == null){
          if(funSym.params.typelist.size() != 0){

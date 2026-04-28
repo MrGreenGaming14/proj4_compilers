@@ -8,10 +8,14 @@ public class Emitter {
 
         private ArrayList<Var> globals;
         private ArrayList<Function> funcs;
+        private ArrayList<StructTypeDef> structs;
+        private ArrayList<UnionTypeDef> unions;
 
-        public ProgramEmitter(ArrayList<Var> globals, ArrayList<Function> funcs) {
+        public ProgramEmitter(ArrayList<Var> globals, ArrayList<Function> funcs, ArrayList<StructTypeDef> structs, ArrayList<UnionTypeDef> unions) {
             this.globals = globals;
             this.funcs = funcs;
+            this.structs = structs;
+            this.unions = unions;
         }
 
         private InstructionEmitter instrEmitter = new InstructionEmitter();
@@ -23,12 +27,32 @@ public class Emitter {
             sb.append("#include <stdio.h>\n");
 
             // 1. Emit global variable declarations
-                for (Var v : globals) {
-                    sb.append(v.type.toString()).append(" ").append(v.name).append(";\n");
-                }
+            for (Var v : globals) {
+                sb.append(v.type.toString()).append(" ").append(v.name).append(";\n");
+            }
             sb.append("\n");
 
-            // 2. Emit functions
+            //2. Emit structs
+            for(StructTypeDef struct : structs){
+                sb.append("struct ").append(struct.name).append("{\n");
+                for(StructField field : struct.fields){
+                    sb.append(field.gotoType.toString()).append(" ").append(field.name).append(";\n");
+                }
+                sb.append("}\n");
+            }
+            sb.append("\n");
+
+            //3. Emit unions
+            for(UnionTypeDef union : unions){
+                sb.append("union ").append(union.name).append("{\n");
+                for(StructField field : union.variants){
+                    sb.append(field.gotoType.toString()).append(" ").append(field.name).append(";\n");
+                }
+                sb.append("}\n");
+            }
+            sb.append("\n");
+
+            // 4. Emit functions
             for (Function f : funcs) {
                 sb.append(f.returntype + " ").append(f.name).append("() {\n");
                 for (GOTONode instr : f.instr) {

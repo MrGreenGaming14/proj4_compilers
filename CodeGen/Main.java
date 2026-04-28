@@ -137,7 +137,7 @@ public class Main {
                     i++;
                 }
             }
-            Emitter.ProgramEmitter pe = new Emitter.ProgramEmitter(GOTOprog.globals, GOTOprog.funcs);
+            Emitter.ProgramEmitter pe = new Emitter.ProgramEmitter(GOTOprog.globals, GOTOprog.funcs, GOTOprog.structs, GOTOprog.unions);
             System.out.println("\n\n\nProgram:\n");
             System.out.println(pe.emitProgram());
         } catch (TypeCheckException e) {

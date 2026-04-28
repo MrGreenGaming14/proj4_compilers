@@ -131,6 +131,7 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
 
    @Override
    public IRExpr visitUnaryExp(UnaryExp node){
+      System.out.println(node.print(0));
       IRExpr expr = visit(node.exp);
       return new UnaryOp(node.prefix,expr,expr.type);
    }
@@ -221,8 +222,9 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
 
    @Override
    public IRExpr visitExprStmt(ExprStmt node){
+      System.out.println(node.print(0));
       IRExpr expr = visit(node.expression);
-      if(expr instanceof GOTOBinOp){ //i believe this has to be an assign
+      if(expr instanceof GOTOBinOp){
          GOTOBinOp binOpExpr = (GOTOBinOp)expr;
          Var leftVar = (Var)binOpExpr.left;
          IRExpr rightExpr = (IRExpr)binOpExpr.right;
@@ -232,6 +234,10 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
          UnaryOp unOpExpr = (UnaryOp)expr;
          currentFunction.instr.add(unOpExpr);
       }
+      else if(expr instanceof Call){
+         Call call = (Call)expr;
+         currentFunction.instr.add(call);
+      }
       return defaultReturn;
    }
 
@@ -239,13 +245,52 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
    public IRExpr visitFunExp(FunExp node){
       TypecheckType tcType;
       GOTOType gotoType;
+      ID funcName = (ID)node.name;
+
+      if(funcName.value.equals("printf")){
+         return new Call(funcName.value, GOTOType.INT);
+      }
 
       tcType = node.typeAnnotation;
       gotoType = typecheckTypeToGOTO(tcType);
 
-      ID funcName = (ID)node.name;
 
       return new Call(funcName.value, gotoType);
    }
+
+   @Override
+   public IRExpr visitStructDecl(StructDecl node){
+      DeclList absynFields = node.body;
+      ArrayList<StructField> fields = new ArrayList<StructField>();
+      StructMember sm;
+      for(Decl decl : absynFields.list){
+         sm = (StructMember)decl;
+         fields.add(new StructField(sm.name, typecheckTypeToGOTO(sm.type.typeAnnotation)));
+      }
+      StructTypeDef sf = new StructTypeDef(node.name, fields);
+      GOTOprog.structs.add(sf);
+      return defaultReturn;
+   }
+
+   @Override
+   public IRExpr visitUnionDecl(UnionDecl node){
+      System.out.println(node.print(0));
+      DeclList absynFields = node.body;
+      ArrayList<StructField> variants = new ArrayList<StructField>();
+      UnionMember sm;
+      for(Decl decl : absynFields.list){
+         sm = (UnionMember)decl;
+         variants.add(new StructField(sm.name, typecheckTypeToGOTO(sm.type.typeAnnotation)));
+      }
+      UnionTypeDef sf = new UnionTypeDef(node.name, variants);
+      GOTOprog.unions.add(sf);
+      return defaultReturn;
+   }
+
+   @Override
+	public IRExpr visitStmt(Stmt node) {
+      System.out.println(node.print(0));
+		return defaultReturn;
+	}
    
 }

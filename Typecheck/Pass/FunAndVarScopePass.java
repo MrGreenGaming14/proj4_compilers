@@ -1,7 +1,6 @@
 package Typecheck.Pass;
 import Absyn.*;
-import Typecheck.Types.TypecheckType;
-import Typecheck.Types.LIST;
+import Typecheck.Types.*;
 import Typecheck.SymbolTable.*;
 import Typecheck.TypeCheckException;
 import java.util.ArrayList;

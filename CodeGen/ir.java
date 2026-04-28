@@ -527,12 +527,10 @@ class ArrayAllocInit extends IRStmt {
 class StructField {
     public final String name;
     public final GOTOType gotoType;
-    public final String cType;   // "int", "char*", "MyStruct*", etc.
 
-    public StructField(String name, GOTOType gotoType, String cType) {
+    public StructField(String name, GOTOType gotoType) {
         this.name     = name;
         this.gotoType = gotoType;
-        this.cType    = cType;
     }
 }
 
