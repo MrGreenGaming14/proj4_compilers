@@ -15,11 +15,22 @@ public interface GOTOVisitor<T> {
     T visitLabel(Label instr);
     T visitGOTOReturnStmt(GOTOReturnStmt instr);
     T visitPrintf(Printf instr);
-    T visitGOTO(GOTO instr);
+    T visitGOTO(GOTONode instr);
 
+    // Arrays
+    default T visitArrayAllocInit(ArrayAllocInit instr) { return visitGOTO(instr); }
 
-	default T GOTOvisit(GOTO node) {
-		return node.accept(this);
-	}
+    // Structs
+    default T visitStructTypeDef(StructTypeDef instr)   { return visitGOTO(instr); }
+    default T visitStructInit(StructInit instr)         { return visitGOTO(instr); }
+    default T visitFieldLoad(FieldLoad instr)           { return visitGOTO(instr); }
+    default T visitFieldStore(FieldStore instr)         { return visitGOTO(instr); }
 
+    // Unions
+    default T visitUnionTypeDef(UnionTypeDef instr)     { return visitGOTO(instr); }
+    default T visitUnionInit(UnionInit instr)           { return visitGOTO(instr); }
+
+    default T GOTOvisit(GOTONode node) {
+        return node.accept(this);
+    }
 }

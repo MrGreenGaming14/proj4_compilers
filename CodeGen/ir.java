@@ -10,7 +10,7 @@ import java.util.List;
  * to use in the generated C code.
  */
 enum GOTOType {
-    INT, STRING, INTARRAY;
+    INT, STRING, INTARRAY, STRUCT, UNION;
 
     @Override
     public String toString() {
@@ -18,6 +18,8 @@ enum GOTOType {
             case INT -> "int";
             case STRING -> "char*";
             case INTARRAY -> "int*";
+            case STRUCT -> "struct";
+            case UNION -> "union";
         };
     }
 }
@@ -25,7 +27,7 @@ enum GOTOType {
 /**
  * Base class for all IR nodes.
  */
-abstract class GOTO {
+abstract class GOTONode {
     public <T> T accept(GOTOVisitor<T> v) {
         return v.visitGOTO(this);
     }
@@ -34,7 +36,7 @@ abstract class GOTO {
 /**
  * Expressions in IR.
  */
-abstract class IRExpr extends GOTO {
+abstract class IRExpr extends GOTONode {
     public GOTOType type;
 }
 
@@ -43,7 +45,7 @@ abstract class IRExpr extends GOTO {
  *
  * Anything that performs an action but does not compute a value directly.
  */
-abstract class IRStmt extends GOTO {}
+abstract class IRStmt extends GOTONode {}
 
 /**
  * Builtin operations.
@@ -96,12 +98,16 @@ class Program {
 
     public ArrayList<Var> globals;
     public ArrayList<Function> funcs;
+    public ArrayList<StructTypeDef> structs;
+    public ArrayList<UnionTypeDef> unions;
 
     public Program() {
         this.unique_name_counter = 0;
         this.unique_label_counter = 0;
         this.globals = new ArrayList<>();
         this.funcs = new ArrayList<>();
+        this.structs = new ArrayList<>();
+        this.unions = new ArrayList<>();
     }
 
     public String getUniqueVarName() {
@@ -126,13 +132,15 @@ class Program {
  * }
  */
 class Function {
-    public ArrayList<GOTO> instr;
+    public ArrayList<GOTONode> instr;
+    public ArrayList<FunctionParam> params;
     public String name;
     public String returntype;
 
     public Function(String name, String ret) {
         this.name = name;
         this.instr = new ArrayList<>();
+        this.params = new ArrayList<>();
         this.returntype = ret;
     }
 }
@@ -201,10 +209,12 @@ class Input extends Builtin {}
  */
 class Var extends IRExpr {
     public final String name;
+    public String typeName;
 
     public Var(String name, GOTOType type) {
         this.name = name;
         this.type = type;
+        this.typeName = null;
     }
 
     @Override
@@ -479,5 +489,223 @@ class GOTOReturnStmt extends IRStmt {
     @Override
     public <T> T accept(GOTOVisitor<T> v) {
         return v.visitGOTOReturnStmt(this);
+    }
+}
+// ─── ARRAYS ──────────────────────────────────────────────────────────────────
+
+/**
+ * Array allocation with initializer list.
+ *
+ * Example emitted C:
+ * int arr[] = {1, 2, 3};
+ */
+class ArrayAllocInit extends IRStmt {
+    public final Var array;
+    public final IRExpr size;
+    public final ArrayList<IRExpr> initElems;
+
+    public ArrayAllocInit(Var array, IRExpr size, ArrayList<IRExpr> initElems) {
+        this.array     = array;
+        this.size      = size;
+        this.initElems = initElems;
+    }
+
+    @Override
+    public <T> T accept(GOTOVisitor<T> v) {
+        return v.visitArrayAllocInit(this);
+    }
+}
+
+// ─── STRUCTS ─────────────────────────────────────────────────────────────────
+
+/**
+ * A single field inside a struct or union definition.
+ * Not a GOTO node itself — just a data carrier used by StructTypeDef/UnionTypeDef.
+ *
+ * Example:  int x;   or   char* name;
+ */
+class StructField {
+    public final String name;
+    public final GOTOType gotoType;
+    public final String cType;   // "int", "char*", "MyStruct*", etc.
+
+    public StructField(String name, GOTOType gotoType, String cType) {
+        this.name     = name;
+        this.gotoType = gotoType;
+        this.cType    = cType;
+    }
+}
+
+/**
+ * Struct type definition — emitted once at the top of the C file.
+ *
+ * Example emitted C:
+ * typedef struct {
+ *     int x;
+ *     char* name;
+ * } Point;
+ */
+class StructTypeDef extends GOTONode {
+    public final String name;
+    public final ArrayList<StructField> fields;
+
+    public StructTypeDef(String name, ArrayList<StructField> fields) {
+        this.name   = name;
+        this.fields = fields;
+    }
+
+    @Override
+    public <T> T accept(GOTOVisitor<T> v) {
+        return v.visitStructTypeDef(this);
+    }
+}
+
+/**
+ * Struct variable declaration with optional initializer.
+ *
+ * Example emitted C (no init):
+ * Point p;
+ *
+ * Example emitted C (with init):
+ * Point p = {1, "hello"};
+ */
+class StructInit extends IRStmt {
+    public final Var var;
+    public final String structName;
+    public final ArrayList<IRExpr> initExprs;  // null if no initializer
+
+    public StructInit(Var var, String structName, ArrayList<IRExpr> initExprs) {
+        this.var        = var;
+        this.structName = structName;
+        this.initExprs  = initExprs;
+    }
+
+    @Override
+    public <T> T accept(GOTOVisitor<T> v) {
+        return v.visitStructInit(this);
+    }
+}
+
+/**
+ * Field read:  obj.field  or  ptr->field
+ *
+ * Example emitted C:
+ * p.x
+ * ptr->x
+ */
+class FieldLoad extends IRExpr {
+    public final IRExpr base;
+    public final String field;
+    public final boolean isPointer;  // true = ->, false = .
+
+    public FieldLoad(IRExpr base, String field, boolean isPointer, GOTOType type) {
+        this.base      = base;
+        this.field     = field;
+        this.isPointer = isPointer;
+        this.type      = type;
+    }
+
+    @Override
+    public <T> T accept(GOTOVisitor<T> v) {
+        return v.visitFieldLoad(this);
+    }
+}
+
+/**
+ * Field write:  obj.field = value  or  ptr->field = value
+ *
+ * Example emitted C:
+ * p.x = 5;
+ * ptr->x = 5;
+ */
+class FieldStore extends IRStmt {
+    public final IRExpr base;
+    public final String field;
+    public final boolean isPointer;
+    public final IRExpr value;
+
+    public FieldStore(IRExpr base, String field, boolean isPointer, IRExpr value) {
+        this.base      = base;
+        this.field     = field;
+        this.isPointer = isPointer;
+        this.value     = value;
+    }
+
+    @Override
+    public <T> T accept(GOTOVisitor<T> v) {
+        return v.visitFieldStore(this);
+    }
+}
+
+// ─── UNIONS ──────────────────────────────────────────────────────────────────
+
+/**
+ * Union type definition — emitted once at the top of the C file.
+ *
+ * Example emitted C:
+ * typedef union {
+ *     int i;
+ *     char* s;
+ * } MyUnion;
+ */
+class UnionTypeDef extends GOTONode {
+    public final String name;
+    public final ArrayList<StructField> variants;  // reuses StructField
+
+    public UnionTypeDef(String name, ArrayList<StructField> variants) {
+        this.name     = name;
+        this.variants = variants;
+    }
+
+    @Override
+    public <T> T accept(GOTOVisitor<T> v) {
+        return v.visitUnionTypeDef(this);
+    }
+}
+
+/**
+ * Union variable declaration with optional initializer.
+ *
+ * Example emitted C (no init):
+ * MyUnion u;
+ *
+ * Example emitted C (with init, setting the int variant):
+ * MyUnion u;
+ * u.i = 42;
+ */
+class UnionInit extends IRStmt {
+    public final Var var;
+    public final String unionName;
+    public final String activeField;   // which variant is being initialized
+    public final IRExpr initExpr;      // null if no initializer
+
+    public UnionInit(Var var, String unionName, String activeField, IRExpr initExpr) {
+        this.var         = var;
+        this.unionName   = unionName;
+        this.activeField = activeField;
+        this.initExpr    = initExpr;
+    }
+
+    @Override
+    public <T> T accept(GOTOVisitor<T> v) {
+        return v.visitUnionInit(this);
+    }
+}
+
+// ─── FUNCTION PARAMETERS ─────────────────────────────────────────────────────
+
+/**
+ * A single function parameter.
+ * Not a GOTO node — just a data carrier held by Function.
+ *
+ * Example:  int x   or   Point* p
+ */
+class FunctionParam {
+    public final Var var;
+    public final String cType;  // "int", "char*", "Point*", etc.
+
+    public FunctionParam(Var var, String cType) {
+        this.var   = var;
+        this.cType = cType;
     }
 }

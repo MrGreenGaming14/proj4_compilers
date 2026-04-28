@@ -31,7 +31,7 @@ public class Emitter {
             // 2. Emit functions
             for (Function f : funcs) {
                 sb.append(f.returntype + " ").append(f.name).append("() {\n");
-                for (GOTO instr : f.instr) {
+                for (GOTONode instr : f.instr) {
                     sb.append(instr.accept(instrEmitter)).append("\n");
                 }
                 sb.append("}\n\n");
@@ -43,7 +43,7 @@ public class Emitter {
     public static class InstructionEmitter implements GOTOVisitor<String> {
 
         @Override
-        public String visitGOTO(GOTO instr) {
+        public String visitGOTO(GOTONode instr) {
             throw new RuntimeException("Something bad happened\nEmail: blara4@lsu.edu");
         }
 

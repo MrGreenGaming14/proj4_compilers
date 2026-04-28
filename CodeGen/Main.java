@@ -15,7 +15,7 @@ import org.antlr.v4.runtime.tree.*;
 
 public class Main {
 
-    public static void printInstr(GOTO instr){
+    public static void printInstr(GOTONode instr){
         if(instr instanceof Assign){
             Assign assign = (Assign)instr;
             System.out.print("Assign for var: "+assign.target.name+" = ");
@@ -130,7 +130,7 @@ public class Main {
             for(Function func : GOTOprog.funcs){
                 System.out.println("func: name: "+func.name+" | return type: "+func.returntype+" | instr count: "+func.instr.size());
                 int i = 1;
-                for(GOTO instr : func.instr){
+                for(GOTONode instr : func.instr){
                     System.out.print("instr "+i+": ");
                     printInstr(instr);
                     System.out.println();
