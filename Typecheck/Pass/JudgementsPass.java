@@ -18,9 +18,7 @@ public class JudgementsPass extends ScopePass<TypecheckType> {
    
    @Override
    public TypecheckType visitVarDecl(Absyn.VarDecl node){
-      //System.out.println(node.print(0));
       TypecheckType varType = node.type.typeAnnotation;
-      //System.out.println("varType = "+varType.toString()+"\n\n");
       TypecheckType expType = visit(node.init);
       if(expType != null){
          if(!varType.canAccept(expType)){
@@ -260,5 +258,10 @@ public class JudgementsPass extends ScopePass<TypecheckType> {
          returnType = new LIST(typelist);
       }
       return returnType;
+   }
+
+   @Override
+   public TypecheckType visitArrayExp(Absyn.ArrayExp node){
+      return new INT();
    }
 }

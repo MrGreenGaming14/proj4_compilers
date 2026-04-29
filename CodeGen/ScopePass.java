@@ -13,6 +13,11 @@ public class ScopePass<T> extends Pass<T> {
 		this.currentscope = s;
 	}
 
+	public ScopePass(Scope s, Program GOTOprog){
+		this.currentscope = s;
+		this.GOTOprog = GOTOprog;
+	}
+
 	@Override
 	public T visitFunDecl(FunDecl node) {
 		Scope originalscope = currentscope;

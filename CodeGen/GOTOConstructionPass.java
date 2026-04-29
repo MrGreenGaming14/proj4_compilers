@@ -5,18 +5,20 @@ import Absyn.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GOTOConstructionPass extends Pass<IRExpr> {
+public class GOTOConstructionPass extends ScopePass<IRExpr> {
 
    protected IRExpr defaultReturn = null;
 
    public Program GOTOprog;
-   public Function mainFunction;
    protected Function currentFunction;
+   protected FunSymbol paramsToFree;
 
-   public GOTOConstructionPass(Program GOTOprog) {
+   public GOTOConstructionPass(Scope s, Program GOTOprog) {
+      super(s);
+      this.currentscope = s;
       this.GOTOprog = GOTOprog;
-      this.mainFunction = new Function("main","void");
-      this.currentFunction = mainFunction;
+      this.currentFunction = null;
+      this.paramsToFree = null;
    }
 
    public String typecheckTypeToC(TypecheckType tcType){
@@ -74,6 +76,15 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
       return gotoVarType;
    }
 
+   public void paramFreeCheck(){
+      if(paramsToFree != null){
+         for(ParamSymbol param : paramsToFree.params){
+            currentFunction.instr.add(new StackPopOp(param.stackPtr));
+         }
+         paramsToFree = null;
+      }
+   }
+
    public int initializeArray(Var arrVar, ArrayExpr arrExpr, int i){
       int index = i;
       for(IRExpr elem : arrExpr.initElems){
@@ -81,7 +92,12 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
             index = initializeArray(arrVar, (ArrayExpr)elem, index);
          }
          else{ //must be int
-            currentFunction.instr.add(new ArrayStore(arrVar, new GOTOLiteral(index, GOTOType.INT), elem));
+            if(currentFunction == null){
+               GOTOprog.varDecls.add(new ArrayStore(arrVar, new GOTOLiteral(index, GOTOType.INT), elem));
+            }
+            else{
+               currentFunction.instr.add(new ArrayStore(arrVar, new GOTOLiteral(index, GOTOType.INT), elem));
+            }
             index++;
          }
       }
@@ -90,35 +106,51 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
 
    @Override
    public IRExpr visitVarDecl(VarDecl node){
-      if(node.name.equals("_x3")){
-         System.out.println(node.print(0));
-      }
+      paramFreeCheck();
       visit(node.type);
       IRExpr init = visit(node.init);
       Typecheck.Types.TypecheckType varType = node.type.typeAnnotation;
       GOTOType gotoVarType = typecheckTypeToGOTO(varType);
       if(init != null){
          if(gotoVarType == GOTOType.INTARRAY){
-            System.out.println(node.print(0));
             Var arrVar = new Var(node.name, GOTOType.INT);
             ArrayExpr arrExpr = (ArrayExpr)init;
-            currentFunction.instr.add(new ArrayAlloc(arrVar, new GOTOLiteral(arrExpr.size, GOTOType.INT)));
+            if(currentFunction == null){
+               GOTOprog.varDecls.add(new ArrayAlloc(arrVar, new GOTOLiteral(arrExpr.size, GOTOType.INT)));
+            }
+            else{
+               currentFunction.instr.add(new ArrayAlloc(arrVar, new GOTOLiteral(arrExpr.size, GOTOType.INT)));
+            }
             initializeArray(arrVar, arrExpr, 0);
          }
          else{
             Assign assign = new Assign(new Var(node.name, gotoVarType), init);
-            currentFunction.instr.add(assign);
+            if(currentFunction == null){
+               GOTOprog.varDecls.add(assign);
+            }
+            else{
+               currentFunction.instr.add(assign);
+            }
          }
       }
       else{
          Assign assign = new Assign(new Var(node.name, gotoVarType), null);
-         currentFunction.instr.add(assign);
+         if(currentFunction == null){
+            GOTOprog.varDecls.add(assign);
+         }
+         else{
+            currentFunction.instr.add(assign);
+         }
       }
       return defaultReturn;
    }
 
    @Override
    public IRExpr visitFunDecl(FunDecl node){
+      paramFreeCheck();
+      Scope originalscope = currentscope;
+		currentscope = node.codeGenScope;
+
       TypecheckType tcType;
       String retType = "";
 
@@ -134,12 +166,14 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
 
       GOTOprog.funcs.add(currentFunction);
       currentFunction = originalFunction;
+
+      node.codeGenScope = currentscope;
+		currentscope = originalscope;
       return defaultReturn;
    }
 
    @Override
    public IRExpr visitBinOp(BinOp node){
-      //System.out.println(node.print(0));
       IRExpr left = visit(node.left);
       IRExpr right = visit(node.right);
       return new GOTOBinOp(node.oper, left, right, left.type);
@@ -177,6 +211,7 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
 
    @Override
    public IRExpr visitReturnStmt(ReturnStmt node){
+      paramFreeCheck();
       IRExpr expr = visit(node.expression);
       GOTOReturnStmt retStmt = new GOTOReturnStmt(expr);
       currentFunction.instr.add(retStmt);
@@ -185,6 +220,10 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
 
    @Override
    public IRExpr visitIfStmt(IfStmt node){
+      paramFreeCheck();
+      Scope originalscope = currentscope;
+		currentscope = node.codeGenScope;
+
       String labelTrue;
       String labelFalse;
       String labelFinish;
@@ -209,6 +248,8 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
          visit(node.else_statement);
          currentFunction.instr.add(new Label(labelFinish));
       }
+      node.codeGenScope = currentscope;
+		currentscope = originalscope;
       return defaultReturn;
    }
 
@@ -222,6 +263,10 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
 
    @Override
    public IRExpr visitWhileStmt(WhileStmt node){
+      paramFreeCheck();
+      Scope originalscope = currentscope;
+		currentscope = node.codeGenScope;
+
       String labelStart;
       String labelFinish;
       IRExpr expr = visit(node.expression);
@@ -232,11 +277,15 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
       visit(node.statement);
       currentFunction.instr.add(new GOTOIfStmt(expr,labelStart,labelFinish));
       currentFunction.instr.add(new Label(labelFinish));
+
+      node.codeGenScope = currentscope;
+		currentscope = originalscope;
       return defaultReturn;
    }
 
    @Override
    public IRExpr visitExprStmt(ExprStmt node){
+      paramFreeCheck();
       IRExpr expr = visit(node.expression);
       if(expr instanceof GOTOBinOp){
          GOTOBinOp binOpExpr = (GOTOBinOp)expr;
@@ -276,12 +325,24 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
       tcType = node.typeAnnotation;
       gotoType = typecheckTypeToGOTO(tcType);
 
+      ArrayExpr params = (ArrayExpr)visit(node.params);
+      if(this.currentscope.hasFun(funcName.value)){
+         FunSymbol fs = this.currentscope.getFun(funcName.value);
+         for(int i = 0; i < fs.params.size(); i++){
+            ParamSymbol ps = fs.params.get(i);
+            currentFunction.instr.add(new StackPushOp(ps.name, ps.stackPtr, params.initElems.get(i)));
+         }
+         paramsToFree = fs;
+      }
 
       return new Call(funcName.value, gotoType);
    }
 
    @Override
    public IRExpr visitStructDecl(StructDecl node){
+      Scope originalscope = currentscope;
+		currentscope = node.codeGenScope;
+
       DeclList absynFields = node.body;
       ArrayList<StructField> fields = new ArrayList<StructField>();
       StructMember sm;
@@ -291,11 +352,17 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
       }
       StructTypeDef sf = new StructTypeDef(node.name, fields);
       GOTOprog.structs.add(sf);
+
+      node.codeGenScope = currentscope;
+		currentscope = originalscope;
       return defaultReturn;
    }
 
    @Override
    public IRExpr visitUnionDecl(UnionDecl node){
+      Scope originalscope = currentscope;
+		currentscope = node.codeGenScope;
+
       DeclList absynFields = node.body;
       ArrayList<StructField> variants = new ArrayList<StructField>();
       UnionMember sm;
@@ -305,6 +372,9 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
       }
       UnionTypeDef sf = new UnionTypeDef(node.name, variants);
       GOTOprog.unions.add(sf);
+
+      node.codeGenScope = currentscope;
+		currentscope = originalscope;
       return defaultReturn;
    }
 
@@ -320,12 +390,17 @@ public class GOTOConstructionPass extends Pass<IRExpr> {
          arrList.add(visit(exp));
       }
       ArrayExpr result = new ArrayExpr(arrList);
-      if(arrList.get(0) instanceof ArrayExpr){
-         ArrayExpr innerArr = (ArrayExpr)arrList.get(0);
-         result.size = arrList.size() * innerArr.size;
+      if(arrList.size() == 0){
+         result.size = 0;
       }
       else{
-         result.size = arrList.size();
+         if(arrList.get(0) instanceof ArrayExpr){
+            ArrayExpr innerArr = (ArrayExpr)arrList.get(0);
+            result.size = arrList.size() * innerArr.size;
+         }
+         else{
+            result.size = arrList.size();
+         }
       }
       return result;
    }

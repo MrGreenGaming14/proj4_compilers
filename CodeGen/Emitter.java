@@ -7,12 +7,16 @@ public class Emitter {
     public static class ProgramEmitter {
 
         private ArrayList<Var> globals;
+        private ArrayList<Var> stackPtrs;
+        private ArrayList<IRStmt> varDecls;
         private ArrayList<Function> funcs;
         private ArrayList<StructTypeDef> structs;
         private ArrayList<UnionTypeDef> unions;
 
-        public ProgramEmitter(ArrayList<Var> globals, ArrayList<Function> funcs, ArrayList<StructTypeDef> structs, ArrayList<UnionTypeDef> unions) {
+        public ProgramEmitter(ArrayList<Var> globals, ArrayList<Var> stackPtrs, ArrayList<IRStmt> varDecls, ArrayList<Function> funcs, ArrayList<StructTypeDef> structs, ArrayList<UnionTypeDef> unions) {
             this.globals = globals;
+            this.stackPtrs = stackPtrs;
+            this.varDecls = varDecls;
             this.funcs = funcs;
             this.structs = structs;
             this.unions = unions;
@@ -32,7 +36,19 @@ public class Emitter {
             }
             sb.append("\n");
 
-            //2. Emit structs
+            //2. Initialize parameter stack pointers
+            for(Var v : stackPtrs){
+                sb.append(v.name).append(" = 0;\n");
+            }
+            sb.append("\n");
+
+            //3. Initialize variable declarations outside of functions
+            for(IRStmt stmt : varDecls){
+                sb.append(stmt.accept(instrEmitter)).append("\n");
+            }
+            sb.append("\n");
+
+            //3. Emit structs
             for(StructTypeDef struct : structs){
                 sb.append("struct ").append(struct.name).append("{\n");
                 for(StructField field : struct.fields){
@@ -42,7 +58,7 @@ public class Emitter {
             }
             sb.append("\n");
 
-            //3. Emit unions
+            //4. Emit unions
             for(UnionTypeDef union : unions){
                 sb.append("union ").append(union.name).append("{\n");
                 for(StructField field : union.variants){
@@ -52,7 +68,7 @@ public class Emitter {
             }
             sb.append("\n");
 
-            // 4. Emit functions
+            // 5. Emit functions
             for (Function f : funcs) {
                 sb.append(f.returntype + " ").append(f.name).append("() {\n");
                 for (GOTONode instr : f.instr) {
@@ -169,6 +185,7 @@ public class Emitter {
                                  GOTOvisit(instr.value));
         }
 
+        @Override
         public String visitPrintf(Printf instr) {
             StringBuilder sb = new StringBuilder();
             sb.append("printf(\"").append(instr.format).append("\"");
@@ -176,6 +193,24 @@ public class Emitter {
                 sb.append(", ").append(GOTOvisit(arg));
             }
             sb.append(");");
+            return sb.toString();
+        }
+
+        @Override
+        public String visitStackPushOp(StackPushOp instr){
+            StringBuilder sb = new StringBuilder();
+            sb.append(instr.stack).append(" = realloc(&").append(instr.stack);
+            sb.append(", (").append(instr.stackPtr).append("+1) * sizeof(int);\n");
+            sb.append(instr.stack).append("[").append(instr.stackPtr).append("]");
+            sb.append(" = ").append(GOTOvisit(instr.value)).append(";\n");
+            sb.append(instr.stackPtr).append("++;");
+            return sb.toString();
+        }
+
+        @Override
+        public String visitStackPopOp(StackPopOp instr){
+            StringBuilder sb = new StringBuilder();
+            sb.append(instr.stackPtr).append("--;");
             return sb.toString();
         }
 

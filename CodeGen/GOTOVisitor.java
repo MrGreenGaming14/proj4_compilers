@@ -27,6 +27,9 @@ public interface GOTOVisitor<T> {
     default T visitUnionTypeDef(UnionTypeDef instr)     { return visitGOTO(instr); }
     default T visitUnionInit(UnionInit instr)           { return visitGOTO(instr); }
 
+    T visitStackPushOp(StackPushOp instr);
+    T visitStackPopOp(StackPopOp instr);
+
     default T GOTOvisit(GOTONode node) {
         return node.accept(this);
     }

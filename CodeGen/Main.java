@@ -129,9 +129,8 @@ public class Main {
             asttree.accept(csp);
             GOTOVariableRenamingPass vrp = new GOTOVariableRenamingPass(csp.globalscope, GOTOprog);
             asttree.accept(vrp);
-            GOTOConstructionPass gcp = new GOTOConstructionPass(GOTOprog);
+            GOTOConstructionPass gcp = new GOTOConstructionPass(csp.globalscope, GOTOprog);
             asttree.accept(gcp);
-            GOTOprog.funcs.add(gcp.mainFunction);
             for(Var global : GOTOprog.globals){
                 System.out.println("global: name: "+global.name+" | type: "+global.type.toString());
             }
@@ -145,7 +144,7 @@ public class Main {
                     i++;
                 }
             }
-            Emitter.ProgramEmitter pe = new Emitter.ProgramEmitter(GOTOprog.globals, GOTOprog.funcs, GOTOprog.structs, GOTOprog.unions);
+            Emitter.ProgramEmitter pe = new Emitter.ProgramEmitter(GOTOprog.globals, GOTOprog.stackPtrs, GOTOprog.varDecls, GOTOprog.funcs, GOTOprog.structs, GOTOprog.unions);
             System.out.println("\n\n\nProgram:\n");
             System.out.println(pe.emitProgram());
         } catch (TypeCheckException e) {

@@ -2,6 +2,7 @@ package CodeGen;
 import Absyn.*;
 import Typecheck.TypeCheckException;
 import Typecheck.Types.*;
+import java.util.ArrayList;
 
 
 public class GOTOVariableRenamingPass extends ScopePass<Void> {
@@ -54,6 +55,50 @@ public class GOTOVariableRenamingPass extends ScopePass<Void> {
       GOTOprog.globals.add(new Var(node.name, gotoType));
       return defaultReturn;
    }
+
+   @Override
+	public Void visitFunDecl(FunDecl node) {
+		Scope originalscope = currentscope;
+      visit(node.type);
+		visit(node.params);
+      DeclList paramList = (DeclList)node.params;
+      ArrayList<Decl> paramListArr = paramList.list;
+      ArrayList<ParamSymbol> paramSymList = new ArrayList<ParamSymbol>();
+      for(Decl declParam : paramListArr){
+         Parameter param = (Parameter)declParam;
+         String stack = GOTOprog.getUniqueVarName();
+         String stackPtr = GOTOprog.getUniqueVarName();
+         VarSymbol vs = new VarSymbol(param.name, stack+"["+stackPtr+"-1]");
+         this.currentscope.addVar(param.name, vs);
+         GOTOprog.globals.add(new Var(stack, GOTOType.INTARRAY));
+         GOTOprog.globals.add(new Var(stackPtr, GOTOType.INT));
+         GOTOprog.stackPtrs.add(new Var(stackPtr, GOTOType.INT));
+         ParamSymbol ps = new ParamSymbol(stack, stackPtr);
+         paramSymList.add(ps);
+      }
+      FunSymbol fs = new FunSymbol(node.name, paramSymList);
+      System.out.println("adding function with name: "+node.name);
+      this.currentscope.addFun(node.name, fs);
+      currentscope = node.codeGenScope;
+		visit(node.body);
+		node.codeGenScope = currentscope;
+		currentscope = originalscope;
+		return defaultReturn;
+	}
+
+   @Override
+	public Void visitParameter(Parameter node) {
+      visit(node.type);
+
+      //String stack = GOTOprog.getUniqueVarName();
+      //String stackPtr = GOTOprog.getUniqueVarName();
+      //ParamSymbol ps = new ParamSymbol(node.name, stack, stackPtr);
+      //this.currentscope.addParam(node.name, ps);
+
+      //we're NOT going to rename parameters, since we want to easily identify what is and is not a parameter
+      System.out.println(node.print(0));
+		return defaultReturn;
+	}
 
    @Override
    public Void visitID(ID node){

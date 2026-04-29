@@ -11,6 +11,7 @@ union r6_union {
 }
 //var r6_union r6_union_element = 4;
 fun int test_func () {
+    var int[3][2] r3_arr1 = {{1,2},{1,2},{1,2}};
     var int a = 1;
     fun int test_func2 (int l, int m){
         var int a = 2;

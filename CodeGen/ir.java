@@ -97,6 +97,8 @@ class Program {
     private int unique_label_counter;
 
     public ArrayList<Var> globals;
+    public ArrayList<Var> stackPtrs;
+    public ArrayList<IRStmt> varDecls;
     public ArrayList<Function> funcs;
     public ArrayList<StructTypeDef> structs;
     public ArrayList<UnionTypeDef> unions;
@@ -105,6 +107,8 @@ class Program {
         this.unique_name_counter = 0;
         this.unique_label_counter = 0;
         this.globals = new ArrayList<>();
+        this.stackPtrs = new ArrayList<>();
+        this.varDecls = new ArrayList<>();
         this.funcs = new ArrayList<>();
         this.structs = new ArrayList<>();
         this.unions = new ArrayList<>();
@@ -133,14 +137,12 @@ class Program {
  */
 class Function {
     public ArrayList<GOTONode> instr;
-    public ArrayList<FunctionParam> params;
     public String name;
     public String returntype;
 
     public Function(String name, String ret) {
         this.name = name;
         this.instr = new ArrayList<>();
-        this.params = new ArrayList<>();
         this.returntype = ret;
     }
 }
@@ -676,20 +678,53 @@ class UnionInit extends IRStmt {
     }
 }
 
-// ─── FUNCTION PARAMETERS ─────────────────────────────────────────────────────
+/**
+ * This instruction is meant to only be used when adding a value to
+ * a parameter's stack.
+ * 
+ * Example of emitted C:
+ * _x1 = realloc(&_x1, (_x2+1) * sizeof(int);
+ * _x1[_x2] = value;
+ * _x2++;
+ * 
+ * Note: Parameters only work for parameters of the int type as of now
+ */
+
+class StackPushOp extends IRStmt {
+    public final String stack;
+    public final String stackPtr;
+    public final IRExpr value;
+
+    public StackPushOp(String stack, String stackPtr, IRExpr value){
+        this.stack = stack;
+        this.stackPtr = stackPtr;
+        this.value = value;
+    }
+
+    @Override
+    public <T> T accept(GOTOVisitor<T> v){
+        return v.visitStackPushOp(this);
+    }
+}
 
 /**
- * A single function parameter.
- * Not a GOTO node — just a data carrier held by Function.
- *
- * Example:  int x   or   Point* p
+ * This instruction is meant to only be used when removing a value
+ * from a parameter's stack.
+ * 
+ * Example of emitted C:
+ * _x2--;
  */
-class FunctionParam {
-    public final Var var;
-    public final String cType;  // "int", "char*", "Point*", etc.
 
-    public FunctionParam(Var var, String cType) {
-        this.var   = var;
-        this.cType = cType;
+class StackPopOp extends IRStmt {
+    public final String stackPtr;
+
+    public StackPopOp(String stackPtr){
+        this.stackPtr = stackPtr;
     }
+
+    @Override
+    public <T> T accept(GOTOVisitor<T> v){
+        return v.visitStackPopOp(this);
+    }
+
 }
