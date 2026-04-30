@@ -7,7 +7,7 @@ public class Emitter {
     public static class ProgramEmitter {
 
         private ArrayList<Var> globals;
-        private ArrayList<Var> stackPtrs;
+        private ArrayList<ParamInit> paramVarInit;
         private ArrayList<IRStmt> varDecls;
         private boolean writeToFile;
         private boolean readFromFile;
@@ -17,7 +17,7 @@ public class Emitter {
 
         public ProgramEmitter(Program program) {
             this.globals = program.globals;
-            this.stackPtrs = program.stackPtrs;
+            this.paramVarInit = program.paramVarInit;
             this.varDecls = program.varDecls;
             this.writeToFile = program.writeToFile;
             this.readFromFile = program.readFromFile;
@@ -39,15 +39,16 @@ public class Emitter {
                 sb.append(v.type.toString()).append(" ").append(v.name).append(";\n");
             }
 
-            //2. Initialize parameter stack pointers
-            for(Var v : stackPtrs){
-                sb.append(v.name).append(" = 0;\n");
+            for(ParamInit p : paramVarInit){
+                if(p.stackPtr){
+                    sb.append("int ").append(p.name).append(" = 0;\n");
+                }
+                else{
+                    sb.append("int* ").append(p.name).append(" = NULL;\n");
+                }
             }
 
             //3. Initialize variable declarations outside of functions
-            for(IRStmt stmt : varDecls){
-                sb.append(stmt.accept(instrEmitter)).append("\n");
-            }
 
             if(writeToFile){
                 sb.append("void writeToFile(const char* path, const char* content) {\n");
@@ -64,6 +65,27 @@ public class Emitter {
                 sb.append("fread(buffer, 1, size, f);\n\tbuffer[size] = '\\0';\n\t");
                 sb.append("fclose(f);\n\treturn buffer;\n}\n");
             }
+
+            /*
+            void checkBounds(int** arr, int index, int capacity) {
+                if (*arr == NULL) {
+                    capacity = index;
+                    *arr = malloc(capacity * sizeof(int));
+                } else if (index >= capacity) {
+                    capacity = index + 1;
+                    int* tmp = realloc(*arr, capacity * sizeof(int));
+                    if (tmp) *arr = tmp;
+                }
+            }
+            */
+
+            sb.append("void checkBounds(int** arr, int index, int capacity) {\n\t");
+            sb.append("if (*arr == NULL) {\n\t\tcapacity = index;\n\t\t");
+            sb.append("*arr = malloc(capacity * sizeof(int));\n\t");
+            sb.append("} else if (index >= capacity) {\n\t\t");
+            sb.append("capacity = index + 1;\n\t\tint* tmp = realloc(*arr, capacity * sizeof(int));\n\t\t");
+            sb.append("if (tmp) *arr = tmp;\n\t}\n}\n");
+
 
             //3. Emit structs
             for(StructTypeDef struct : structs){
@@ -86,6 +108,11 @@ public class Emitter {
             // 5. Emit functions
             for (Function f : funcs) {
                 sb.append(f.returntype + " ").append(f.name).append("() {\n");
+                if(f.name.equals("main")){
+                    for(IRStmt stmt : varDecls){
+                        sb.append(stmt.accept(instrEmitter)).append("\n");
+                    }
+                }
                 for (GOTONode instr : f.instr) {
                     sb.append(instr.accept(instrEmitter)).append("\n");
                 }
@@ -111,7 +138,11 @@ public class Emitter {
         public String visitLiteral(GOTOLiteral instr) {
             switch (instr.type) {
                 case INT -> { return instr.value.toString(); }
-                case STRING -> { return "\"" + instr.value.toString() + "\""; }
+                case STRING -> { 
+                    String str = (String)instr.value;
+                    str = str.replace("\n","\\n");
+                    return "\"" + str + "\""; 
+                }
                 default -> throw new RuntimeException("Unsupported literal type: " + instr.type);
             }
         }
@@ -127,20 +158,30 @@ public class Emitter {
 
         @Override
         public String visitUnaryOp(UnaryOp instr) {
-            return String.format("(%s(%s))",
-                                 instr.op,
-                                 GOTOvisit(instr.expr));
+            StringBuilder sb = new StringBuilder();
+            sb.append("(").append(instr.op).append("(").append(GOTOvisit(instr.expr));
+            sb.append("))");
+            if(instr.lastExpr){
+                sb.append(";");
+            }
+            return sb.toString();
         }
 
         @Override
         public String visitCall(Call instr) {
-            String ret = instr.func + "()";
+            String ret;
+            if(instr.isStmt = true){
+                ret = instr.func + "();";
+            }
+            else{
+                ret = instr.func + "()";
+            }
             return ret;
         }
 
         @Override
         public String visitArrayLoad(ArrayLoad instr) {
-            return String.format("(*%s+%s)",
+            return String.format("*(%s+%s)",
                                  GOTOvisit(instr.array),
                                  GOTOvisit(instr.index));
         }
@@ -158,7 +199,7 @@ public class Emitter {
             String ret = "";
             String idx = GOTOvisit(instr.index);
             String val = GOTOvisit(instr.value);
-            ret += "(*" + GOTOvisit(instr.array) + " + " + idx + ") = " + val + ";";
+            ret += "*(" + GOTOvisit(instr.array) + " + " + idx + ") = " + val + ";";
             return ret;
         }
 
@@ -214,7 +255,7 @@ public class Emitter {
         @Override
         public String visitInput(Input instr){
             StringBuilder sb = new StringBuilder();
-            sb.append("scan(\"%d\", &").append( GOTOvisit(instr.arg)).append(");");;
+            sb.append("scanf(\"%d\", &").append( GOTOvisit(instr.arg)).append(");");;
             return sb.toString();
         }
 
@@ -236,8 +277,8 @@ public class Emitter {
         @Override
         public String visitStackPushOp(StackPushOp instr){
             StringBuilder sb = new StringBuilder();
-            sb.append(instr.stack).append(" = realloc(&").append(instr.stack);
-            sb.append(", (").append(instr.stackPtr).append("+1) * sizeof(int);\n");
+            sb.append(instr.stack).append(" = realloc(").append(instr.stack);
+            sb.append(", (").append(instr.stackPtr).append("+1) * sizeof(int));\n");
             sb.append(instr.stack).append("[").append(instr.stackPtr).append("]");
             sb.append(" = ").append(GOTOvisit(instr.value)).append(";\n");
             sb.append(instr.stackPtr).append("++;");
@@ -248,6 +289,15 @@ public class Emitter {
         public String visitStackPopOp(StackPopOp instr){
             StringBuilder sb = new StringBuilder();
             sb.append(instr.stackPtr).append("--;");
+            return sb.toString();
+        }
+
+        @Override
+        public String visitCheckBounds(CheckBounds instr){
+            StringBuilder sb = new StringBuilder();
+            sb.append("checkBounds(&").append(instr.arrayName).append(", ");
+            sb.append(GOTOvisit(instr.index)).append(", ").append(instr.capacity);
+            sb.append(");");
             return sb.toString();
         }
 

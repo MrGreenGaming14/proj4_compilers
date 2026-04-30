@@ -70,9 +70,8 @@ public class GOTOVariableRenamingPass extends ScopePass<Void> {
          String stackPtr = GOTOprog.getUniqueVarName();
          VarSymbol vs = new VarSymbol(param.name, stack+"["+stackPtr+"-1]");
          this.currentscope.addVar(param.name, vs);
-         GOTOprog.globals.add(new Var(stack, GOTOType.INTARRAY));
-         GOTOprog.globals.add(new Var(stackPtr, GOTOType.INT));
-         GOTOprog.stackPtrs.add(new Var(stackPtr, GOTOType.INT));
+         GOTOprog.paramVarInit.add(new ParamInit(stack, false));
+         GOTOprog.paramVarInit.add(new ParamInit(stackPtr, true));
          ParamSymbol ps = new ParamSymbol(stack, stackPtr);
          paramSymList.add(ps);
       }
@@ -99,5 +98,17 @@ public class GOTOVariableRenamingPass extends ScopePass<Void> {
       //otherwise is a function
       return defaultReturn;
    }
+
+   @Override
+	public Void visitArrayExp(ArrayExp node) {
+      visit(node.name);
+      ID arrName = (ID)node.name;
+      if(!this.currentscope.hasArr(arrName.value)){
+         ArrSymbol as = new ArrSymbol(arrName.value, 0);
+         this.currentscope.addArr(arrName.value, as);
+      }
+      visit(node.index_list);
+		return defaultReturn;
+	}
 
 }

@@ -30,9 +30,13 @@ fun int main() {
     var int x = 0;  
 
     arr[x] = 5; 
+    x = x + 1;
     arr[x] = 1; 
+    x = x + 1;
     arr[x] = 4; 
-    arr[x] = 2; 
+    x = x + 1;
+    arr[x] = 2;
+    x = x + 1; 
     arr[x] = 3; 
 
     x = 0;

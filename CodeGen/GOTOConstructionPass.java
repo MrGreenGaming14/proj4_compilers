@@ -199,7 +199,6 @@ public class GOTOConstructionPass extends ScopePass<IRExpr> {
 
    @Override
    public IRExpr visitID(ID node){
-      System.out.println(node.value);
       GOTOType gotoType = typecheckTypeToGOTO(node.typeAnnotation);
       return new Var(node.value, gotoType);
    }
@@ -296,10 +295,12 @@ public class GOTOConstructionPass extends ScopePass<IRExpr> {
       }
       else if(expr instanceof UnaryOp){
          UnaryOp unOpExpr = (UnaryOp)expr;
+         unOpExpr.lastExpr = true;
          currentFunction.instr.add(unOpExpr);
       }
       else if(expr instanceof Call){
          Call call = (Call)expr;
+         call.isStmt = true;
          currentFunction.instr.add(call);
       }
       return defaultReturn;
@@ -360,7 +361,7 @@ public class GOTOConstructionPass extends ScopePass<IRExpr> {
          paramsToFree = fs;
       }
 
-      return new Call(funcName.value, gotoType);
+      return new Call(funcName.value, gotoType, false);
    }
 
    @Override
@@ -441,6 +442,11 @@ public class GOTOConstructionPass extends ScopePass<IRExpr> {
       //doesn't handle multiple dimensions
       if(exprList.list.size() != 0){
          index = visit(exprList.list.get(0));
+         System.out.println(array.name);
+         if(this.currentscope.hasArr(array.name)){
+            ArrSymbol as = this.currentscope.getArr(array.name);
+            currentFunction.instr.add(new CheckBounds(array.name, index, as.arrSize));
+         }
          ArrayLoad result = new ArrayLoad(array, index, GOTOType.INT);
          return result;
       }

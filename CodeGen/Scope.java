@@ -21,6 +21,7 @@ public class Scope {
     private class SymbolBucket {
         VarSymbol var;
         FunSymbol fun;
+        ArrSymbol arr;
     }
 
     private SymbolBucket locallookup(String n) {
@@ -29,7 +30,8 @@ public class Scope {
 
     private enum SYMBOL{
       VAR,
-      FUN
+      FUN,
+      ARR
     }
 
    private SymbolBucket lookup(String n, SYMBOL s) {
@@ -42,6 +44,9 @@ public class Scope {
                   break;
                case FUN:
                   if (current.locallookup(n).fun != null) return current.locallookup(n);
+                  break;
+               case ARR:
+                  if (current.locallookup(n).arr != null) return current.locallookup(n);
                   break;
             }
          } 
@@ -60,6 +65,10 @@ public class Scope {
       return (locallookup(n) != null && locallookup(n).fun != null);
     }
 
+    public boolean hasLocalArr(String n){
+      return (locallookup(n) != null && locallookup(n).arr != null);
+    }
+
 
 
     public boolean hasVar(String n) {
@@ -68,6 +77,10 @@ public class Scope {
 
     public boolean hasFun(String n){
       return (lookup(n, SYMBOL.FUN) != null);
+    }
+
+    public boolean hasArr(String n){
+      return (lookup(n, SYMBOL.ARR) != null);
     }
 
     private SymbolBucket getBucket(String n) {
@@ -97,6 +110,15 @@ public class Scope {
       this.bindings.put(n, symbuc);
    }
 
+   public void addArr(String n, ArrSymbol sym){
+      SymbolBucket symbuc = getBucket(n);
+      if(symbuc.arr != null){
+         throw new TypeCheckException("Symbol "+n+" defined twice in the same scope");
+      }
+      symbuc.arr = sym;
+      this.bindings.put(n, symbuc);
+   }
+
    public VarSymbol getVar(String n) {
       if (lookup(n, SYMBOL.VAR) != null) {
          return lookup(n, SYMBOL.VAR).var;
@@ -110,6 +132,14 @@ public class Scope {
          return lookup(n, SYMBOL.FUN).fun;
       } else {
          throw new TypeCheckException("Looked up fun "+n+" but was not found.");
+      }
+   }
+
+   public ArrSymbol getArr(String n){
+      if(lookup(n, SYMBOL.ARR) != null){
+         return lookup(n, SYMBOL.ARR).arr;
+      } else{
+         throw new TypeCheckException("Looked up arr "+n+" but was not found.");
       }
    }
 

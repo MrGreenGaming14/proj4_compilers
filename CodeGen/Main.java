@@ -9,6 +9,8 @@ import Typecheck.Pass.JudgementsPass;
 import Typecheck.Pass.TypeAnnotationPass;
 import Typecheck.Pass.TypeScopePass;
 import java.util.ArrayList;
+import java.io.*;
+import java.nio.file.*;
 
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
@@ -131,6 +133,7 @@ public class Main {
             asttree.accept(vrp);
             GOTOConstructionPass gcp = new GOTOConstructionPass(csp.globalscope, GOTOprog);
             asttree.accept(gcp);
+            /*
             for(Var global : GOTOprog.globals){
                 System.out.println("global: name: "+global.name+" | type: "+global.type.toString());
             }
@@ -144,9 +147,36 @@ public class Main {
                     i++;
                 }
             }
+            */
             Emitter.ProgramEmitter pe = new Emitter.ProgramEmitter(GOTOprog);
-            System.out.println("\n\n\nProgram:\n");
-            System.out.println(pe.emitProgram());
+            System.out.println("\nProgram:");
+            String cCode = pe.emitProgram();
+            System.out.print(cCode);
+            System.out.println("Compiling:");
+            Path sourceFile = Paths.get("output.c");
+            Files.writeString(sourceFile, cCode);
+            ProcessBuilder pb = new ProcessBuilder(
+                "gcc",
+                sourceFile.toString(),
+                "-o",
+                "output"
+            );
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            try(BufferedReader reader = new BufferedReader(
+                new InputStreamReader(process.getInputStream()))){
+                String line;
+                while((line = reader.readLine()) != null){
+                    System.out.println(line);
+                }
+            }
+            int exitCode = process.waitFor();
+            if(exitCode == 0){
+                System.out.println("Compilation succeeded!");
+            }
+            else{
+                System.out.println("Compilation failed with exit code: "+exitCode);
+            }
 
         } catch (TypeCheckException e) {
             System.err.println("TypeCheckError: " + e.getMessage());

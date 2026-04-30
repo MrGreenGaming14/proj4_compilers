@@ -18,6 +18,7 @@ public interface GOTOVisitor<T> {
     T visitInput(Input instr);
     T visitReadFromFile(ReadFromFile instr);
     T visitWriteToFile(WriteToFile instr);
+    T visitCheckBounds(CheckBounds instr);
     T visitGOTO(GOTONode instr);
 
     // Structs

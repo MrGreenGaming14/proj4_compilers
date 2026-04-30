@@ -97,7 +97,7 @@ class Program {
     private int unique_label_counter;
 
     public ArrayList<Var> globals;
-    public ArrayList<Var> stackPtrs;
+    public ArrayList<ParamInit> paramVarInit;
     public ArrayList<IRStmt> varDecls;
     public boolean writeToFile;
     public boolean readFromFile;
@@ -109,7 +109,7 @@ class Program {
         this.unique_name_counter = 0;
         this.unique_label_counter = 0;
         this.globals = new ArrayList<>();
-        this.stackPtrs = new ArrayList<>();
+        this.paramVarInit = new ArrayList<>();
         this.varDecls = new ArrayList<>();
         writeToFile = false;
         readFromFile = false;
@@ -166,7 +166,7 @@ class Printf extends Builtin {
     public final List<IRExpr> args;  
 
     public Printf(String format, List<IRExpr> args) {
-        this.format = format;
+        this.format = format.replace("\n","\\n");
         this.args = args;
     }
 
@@ -266,6 +266,16 @@ class Var extends IRExpr {
     }
 }
 
+class ParamInit extends IRStmt {
+    public final String name;
+    public boolean stackPtr;
+
+    public ParamInit(String name, boolean stackPtr){
+        this.name = name;
+        this.stackPtr = stackPtr;
+    }
+}
+
 /**
  * Literal constant.
  *
@@ -321,11 +331,13 @@ class GOTOBinOp extends IRExpr {
 class UnaryOp extends IRExpr {
     public final String op;
     public final IRExpr expr;
+    public boolean lastExpr;
 
     public UnaryOp(String op, IRExpr expr, GOTOType type) {
         this.op = op;
         this.expr = expr;
         this.type = type;
+        lastExpr = false;
     }
 
     @Override
@@ -345,10 +357,12 @@ class UnaryOp extends IRExpr {
  */
 class Call extends IRExpr {
     public final String func;
+    public boolean isStmt;
 
-    public Call(String func, GOTOType rettype) {
+    public Call(String func, GOTOType rettype, boolean isStmt) {
         this.func = func;
         this.type = rettype;
+        this.isStmt = isStmt;
     }
 
     @Override
@@ -768,4 +782,21 @@ class StackPopOp extends IRStmt {
         return v.visitStackPopOp(this);
     }
 
+}
+
+class CheckBounds extends IRStmt {
+    public final String arrayName;
+    public final IRExpr index;
+    public final int capacity;
+
+    public CheckBounds(String arrayName, IRExpr index, int capacity){
+        this.arrayName = arrayName;
+        this.index = index;
+        this.capacity = capacity;
+    }
+
+    @Override
+    public <T> T accept(GOTOVisitor<T> v){
+        return v.visitCheckBounds(this);
+    }
 }
