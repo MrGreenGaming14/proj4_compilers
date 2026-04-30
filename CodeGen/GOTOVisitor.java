@@ -15,6 +15,9 @@ public interface GOTOVisitor<T> {
     T visitLabel(Label instr);
     T visitGOTOReturnStmt(GOTOReturnStmt instr);
     T visitPrintf(Printf instr);
+    T visitInput(Input instr);
+    T visitReadFromFile(ReadFromFile instr);
+    T visitWriteToFile(WriteToFile instr);
     T visitGOTO(GOTONode instr);
 
     // Structs

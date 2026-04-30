@@ -162,18 +162,16 @@ public class JudgementsPass extends ScopePass<TypecheckType> {
 
    @Override
    public TypecheckType visitID(Absyn.ID node){
-      if(node.value.equals("printf")){
+      if(node.value.equals("printf") || node.value.equals("input")
+      || node.value.equals("writeToFile") || node.value.equals("readFromFile")){
          return new VOID();
       }
       TypecheckType type = new VOID();
       if(!node.value.equals("null")){
-         System.out.println(node.value);
          if(this.currentscope.hasVar(node.value)){
-            System.out.println("found var");
             type = this.currentscope.getVar(node.value).type;
          }
          else if(this.currentscope.hasFun(node.value)){
-            System.out.println("found func");
             type = this.currentscope.getFun(node.value).returnType;
          }
       }
@@ -210,7 +208,8 @@ public class JudgementsPass extends ScopePass<TypecheckType> {
       visit(node.name);
       TypecheckType expType = visit(node.params);
       Absyn.ID funcId = (Absyn.ID)node.name;
-      if(funcId.value.equals("printf")){
+      if(funcId.value.equals("printf") || funcId.value.equals("input")
+      || funcId.value.equals("writeToFile") || funcId.value.equals("readFromFile")){
          return new VOID();
       }
       FunSymbol funSym = this.currentscope.getFun(funcId.value);

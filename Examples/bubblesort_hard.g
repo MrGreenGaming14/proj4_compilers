@@ -30,8 +30,8 @@ fun int main() {
     var int x = 0;   
 
     while (x < 5) {
-        arr[x] = input();
-        // alternative: input(arr[x]);
+        //arr[x] = input();
+        input(arr[x]);
         x = x + 1;
     }
 

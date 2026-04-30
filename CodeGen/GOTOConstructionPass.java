@@ -141,7 +141,6 @@ public class GOTOConstructionPass extends ScopePass<IRExpr> {
 
    @Override
    public IRExpr visitFunDecl(FunDecl node){
-      System.out.println(node.print(0));
       paramFreeCheck();
       Scope originalscope = currentscope;
 		currentscope = node.codeGenScope;
@@ -322,6 +321,25 @@ public class GOTOConstructionPass extends ScopePass<IRExpr> {
          args.remove(0);
          currentFunction.instr.add(new Printf(format, args));
          return defaultReturn;
+      }
+      else if(funcName.value.equals("input")){
+         IRExpr arg = visit(node.params.list.get(0));
+         currentFunction.instr.add(new Input(arg));
+         return defaultReturn;
+      }
+      else if(funcName.value.equals("writeToFile")){
+         GOTOprog.writeToFile = true;
+         List<IRExpr> args = new ArrayList<IRExpr>();
+         for(Exp exp : node.params.list){
+            args.add(visit(exp));
+         }
+         currentFunction.instr.add(new WriteToFile(args.get(0),args.get(1)));
+         return defaultReturn;
+      }
+      else if(funcName.value.equals("readFromFile")){
+         GOTOprog.readFromFile = true;
+         IRExpr arg = visit(node.params.list.get(0));
+         return new ReadFromFile(arg);
       }
 
       tcType = node.typeAnnotation;

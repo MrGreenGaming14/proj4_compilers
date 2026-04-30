@@ -11,7 +11,7 @@ javac -d bin @sources.txt
 rm sources.txt
 
 if [ "$#" -eq 0 ]; then
-   java CodeGen.Main Examples/bubblesort_medium.g
+   java CodeGen.Main Examples/fileio.g
 else
    java CodeGen.Main $1
 fi

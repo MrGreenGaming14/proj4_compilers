@@ -144,9 +144,10 @@ public class Main {
                     i++;
                 }
             }
-            Emitter.ProgramEmitter pe = new Emitter.ProgramEmitter(GOTOprog.globals, GOTOprog.stackPtrs, GOTOprog.varDecls, GOTOprog.funcs, GOTOprog.structs, GOTOprog.unions);
+            Emitter.ProgramEmitter pe = new Emitter.ProgramEmitter(GOTOprog);
             System.out.println("\n\n\nProgram:\n");
             System.out.println(pe.emitProgram());
+
         } catch (TypeCheckException e) {
             System.err.println("TypeCheckError: " + e.getMessage());
         }

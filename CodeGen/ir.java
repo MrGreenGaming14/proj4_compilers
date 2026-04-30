@@ -99,6 +99,8 @@ class Program {
     public ArrayList<Var> globals;
     public ArrayList<Var> stackPtrs;
     public ArrayList<IRStmt> varDecls;
+    public boolean writeToFile;
+    public boolean readFromFile;
     public ArrayList<Function> funcs;
     public ArrayList<StructTypeDef> structs;
     public ArrayList<UnionTypeDef> unions;
@@ -109,6 +111,8 @@ class Program {
         this.globals = new ArrayList<>();
         this.stackPtrs = new ArrayList<>();
         this.varDecls = new ArrayList<>();
+        writeToFile = false;
+        readFromFile = false;
         this.funcs = new ArrayList<>();
         this.structs = new ArrayList<>();
         this.unions = new ArrayList<>();
@@ -181,9 +185,46 @@ class Printf extends Builtin {
  * Remember, the idea is that Geaux should have a simple "readfromfile("file")"
  * function, and the Emitter turns that into C that actually reads from the file.
  */
-class ReadFromFile extends Builtin {}
-class WriteToFile extends Builtin {}
-class Input extends Builtin {}
+class ReadFromFile extends IRExpr {
+    public final IRExpr path;
+
+    public ReadFromFile(IRExpr path){
+        this.path = path;
+    }
+
+    @Override
+    public <T> T accept(GOTOVisitor<T> v){
+        return v.visitReadFromFile(this);
+    }
+}
+
+class WriteToFile extends Builtin {
+    public final IRExpr path;
+    public final IRExpr content;
+
+    public WriteToFile(IRExpr path, IRExpr content){
+        this.path = path;
+        this.content = content;
+    }
+
+    @Override
+    public <T> T accept(GOTOVisitor<T> v){
+        return v.visitWriteToFile(this);
+    }
+}
+
+class Input extends Builtin {
+    public final IRExpr arg;
+
+    public Input(IRExpr arg){
+        this.arg = arg;
+    }
+
+    @Override
+    public <T> T accept(GOTOVisitor<T> v){
+        return v.visitInput(this);
+    }
+}
 
 /**
  * Variable reference.

@@ -9,17 +9,21 @@ public class Emitter {
         private ArrayList<Var> globals;
         private ArrayList<Var> stackPtrs;
         private ArrayList<IRStmt> varDecls;
+        private boolean writeToFile;
+        private boolean readFromFile;
         private ArrayList<Function> funcs;
         private ArrayList<StructTypeDef> structs;
         private ArrayList<UnionTypeDef> unions;
 
-        public ProgramEmitter(ArrayList<Var> globals, ArrayList<Var> stackPtrs, ArrayList<IRStmt> varDecls, ArrayList<Function> funcs, ArrayList<StructTypeDef> structs, ArrayList<UnionTypeDef> unions) {
-            this.globals = globals;
-            this.stackPtrs = stackPtrs;
-            this.varDecls = varDecls;
-            this.funcs = funcs;
-            this.structs = structs;
-            this.unions = unions;
+        public ProgramEmitter(Program program) {
+            this.globals = program.globals;
+            this.stackPtrs = program.stackPtrs;
+            this.varDecls = program.varDecls;
+            this.writeToFile = program.writeToFile;
+            this.readFromFile = program.readFromFile;
+            this.funcs = program.funcs;
+            this.structs = program.structs;
+            this.unions = program.unions;
         }
 
         private InstructionEmitter instrEmitter = new InstructionEmitter();
@@ -34,19 +38,32 @@ public class Emitter {
             for (Var v : globals) {
                 sb.append(v.type.toString()).append(" ").append(v.name).append(";\n");
             }
-            sb.append("\n");
 
             //2. Initialize parameter stack pointers
             for(Var v : stackPtrs){
                 sb.append(v.name).append(" = 0;\n");
             }
-            sb.append("\n");
 
             //3. Initialize variable declarations outside of functions
             for(IRStmt stmt : varDecls){
                 sb.append(stmt.accept(instrEmitter)).append("\n");
             }
-            sb.append("\n");
+
+            if(writeToFile){
+                sb.append("void writeToFile(const char* path, const char* content) {\n");
+                sb.append("\tFILE* f = fopen(path, \"w\");\n\tif (!f) return;\n\t");
+                sb.append("fputs(content, f);\n\tfclose(f);\n}\n");
+            }
+
+            if(readFromFile){
+                sb.append("char* readFromFile(const char* path) {\n\t");
+                sb.append("FILE* f = fopen(path, \"r\");\n\t");
+                sb.append("if (!f) return NULL;\n\tfseek(f, 0, SEEK_END);\n\t");
+                sb.append("long size = ftell(f);\n\trewind(f);\n\t");
+                sb.append("char* buffer = malloc(size + 1);\n\t");
+                sb.append("fread(buffer, 1, size, f);\n\tbuffer[size] = '\\0';\n\t");
+                sb.append("fclose(f);\n\treturn buffer;\n}\n");
+            }
 
             //3. Emit structs
             for(StructTypeDef struct : structs){
@@ -56,7 +73,6 @@ public class Emitter {
                 }
                 sb.append("}\n");
             }
-            sb.append("\n");
 
             //4. Emit unions
             for(UnionTypeDef union : unions){
@@ -66,7 +82,6 @@ public class Emitter {
                 }
                 sb.append("}\n");
             }
-            sb.append("\n");
 
             // 5. Emit functions
             for (Function f : funcs) {
@@ -193,6 +208,28 @@ public class Emitter {
                 sb.append(", ").append(GOTOvisit(arg));
             }
             sb.append(");");
+            return sb.toString();
+        }
+
+        @Override
+        public String visitInput(Input instr){
+            StringBuilder sb = new StringBuilder();
+            sb.append("scan(\"%d\", &").append( GOTOvisit(instr.arg)).append(");");;
+            return sb.toString();
+        }
+
+        @Override
+        public String visitReadFromFile(ReadFromFile instr){
+            StringBuilder sb = new StringBuilder();
+            sb.append("readFromFile(").append(GOTOvisit(instr.path)).append(")");
+            return sb.toString();
+        }
+
+        @Override
+        public String visitWriteToFile(WriteToFile instr){
+            StringBuilder sb = new StringBuilder();
+            sb.append("writeToFile(").append(GOTOvisit(instr.path)).append(", ");
+            sb.append(GOTOvisit(instr.content)).append(");");
             return sb.toString();
         }
 
