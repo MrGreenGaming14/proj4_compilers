@@ -1,9 +1,12 @@
-var int a_1 = 1;
-var int a_2 = 2;
-var int a_3 = 3;
-
 fun int function(int a, int b, int c){
-    return a+b+c;
+    var int d = 0;
+    a = a + b;
+    c = c - 1;
+    if(c = 0){
+        return a;
+    }
+    d = function(a, b, c);
+    return d;
 }
 
 fun int main() {

@@ -125,7 +125,7 @@ public class Emitter {
 
         @Override
         public String visitArrayLoad(ArrayLoad instr) {
-            return String.format("*(%s+%s)",
+            return String.format("(*%s+%s)",
                                  GOTOvisit(instr.array),
                                  GOTOvisit(instr.index));
         }
@@ -143,7 +143,7 @@ public class Emitter {
             String ret = "";
             String idx = GOTOvisit(instr.index);
             String val = GOTOvisit(instr.value);
-            ret += "*(" + GOTOvisit(instr.array) + " + " + idx + ") = " + val + ";";
+            ret += "(*" + GOTOvisit(instr.array) + " + " + idx + ") = " + val + ";";
             return ret;
         }
 

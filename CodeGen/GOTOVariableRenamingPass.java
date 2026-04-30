@@ -77,7 +77,6 @@ public class GOTOVariableRenamingPass extends ScopePass<Void> {
          paramSymList.add(ps);
       }
       FunSymbol fs = new FunSymbol(node.name, paramSymList);
-      System.out.println("adding function with name: "+node.name);
       this.currentscope.addFun(node.name, fs);
       currentscope = node.codeGenScope;
 		visit(node.body);
@@ -89,14 +88,6 @@ public class GOTOVariableRenamingPass extends ScopePass<Void> {
    @Override
 	public Void visitParameter(Parameter node) {
       visit(node.type);
-
-      //String stack = GOTOprog.getUniqueVarName();
-      //String stackPtr = GOTOprog.getUniqueVarName();
-      //ParamSymbol ps = new ParamSymbol(node.name, stack, stackPtr);
-      //this.currentscope.addParam(node.name, ps);
-
-      //we're NOT going to rename parameters, since we want to easily identify what is and is not a parameter
-      System.out.println(node.print(0));
 		return defaultReturn;
 	}
 

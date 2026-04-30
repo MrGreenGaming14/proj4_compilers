@@ -52,6 +52,9 @@ public class GOTOConstructionPass extends ScopePass<IRExpr> {
       else if(tcType instanceof ARRAY || tcType instanceof LIST){
          retType = "int*";
       }
+      else if(tcType instanceof VOID){
+         retType = "void";
+      }
       return retType + stars;
    }
 
@@ -77,7 +80,7 @@ public class GOTOConstructionPass extends ScopePass<IRExpr> {
    }
 
    public void paramFreeCheck(){
-      if(paramsToFree != null){
+      if(currentFunction != null && paramsToFree != null){
          for(ParamSymbol param : paramsToFree.params){
             currentFunction.instr.add(new StackPopOp(param.stackPtr));
          }
@@ -133,20 +136,12 @@ public class GOTOConstructionPass extends ScopePass<IRExpr> {
             }
          }
       }
-      else{
-         Assign assign = new Assign(new Var(node.name, gotoVarType), null);
-         if(currentFunction == null){
-            GOTOprog.varDecls.add(assign);
-         }
-         else{
-            currentFunction.instr.add(assign);
-         }
-      }
       return defaultReturn;
    }
 
    @Override
    public IRExpr visitFunDecl(FunDecl node){
+      System.out.println(node.print(0));
       paramFreeCheck();
       Scope originalscope = currentscope;
 		currentscope = node.codeGenScope;
@@ -205,6 +200,7 @@ public class GOTOConstructionPass extends ScopePass<IRExpr> {
 
    @Override
    public IRExpr visitID(ID node){
+      System.out.println(node.value);
       GOTOType gotoType = typecheckTypeToGOTO(node.typeAnnotation);
       return new Var(node.value, gotoType);
    }
@@ -255,7 +251,6 @@ public class GOTOConstructionPass extends ScopePass<IRExpr> {
 
    @Override
    public IRExpr visitAssignExp(AssignExp node){
-      //System.out.println(node.print(0));
       IRExpr left = visit(node.left);
       IRExpr right = visit(node.right);
       return new GOTOBinOp("==",left,right,left.type);
@@ -289,9 +284,16 @@ public class GOTOConstructionPass extends ScopePass<IRExpr> {
       IRExpr expr = visit(node.expression);
       if(expr instanceof GOTOBinOp){
          GOTOBinOp binOpExpr = (GOTOBinOp)expr;
-         Var leftVar = (Var)binOpExpr.left;
-         IRExpr rightExpr = (IRExpr)binOpExpr.right;
-         currentFunction.instr.add(new Assign(leftVar, rightExpr));
+         if(binOpExpr.left instanceof Var){
+            Var leftVar = (Var)binOpExpr.left;
+            IRExpr rightExpr = (IRExpr)binOpExpr.right;
+            currentFunction.instr.add(new Assign(leftVar, rightExpr));
+         }
+         else if(binOpExpr.left instanceof ArrayLoad){
+            ArrayLoad leftArr = (ArrayLoad)binOpExpr.left;
+            IRExpr rightExpr = (IRExpr)binOpExpr.right;
+            currentFunction.instr.add(new ArrayStore(leftArr.array, leftArr.index, rightExpr));
+         }
       }
       else if(expr instanceof UnaryOp){
          UnaryOp unOpExpr = (UnaryOp)expr;
@@ -323,7 +325,12 @@ public class GOTOConstructionPass extends ScopePass<IRExpr> {
       }
 
       tcType = node.typeAnnotation;
-      gotoType = typecheckTypeToGOTO(tcType);
+      if(tcType instanceof VOID){
+         gotoType = null;
+      }
+      else{
+         gotoType = typecheckTypeToGOTO(tcType);
+      }
 
       ArrayExpr params = (ArrayExpr)visit(node.params);
       if(this.currentscope.hasFun(funcName.value)){
@@ -385,6 +392,9 @@ public class GOTOConstructionPass extends ScopePass<IRExpr> {
 
    @Override
    public IRExpr visitExpList(ExpList node){
+      if(node.list.size() == 0){
+         return defaultReturn;
+      }
       ArrayList<IRExpr> arrList = new ArrayList<IRExpr>();
       for(Exp exp : node.list){
          arrList.add(visit(exp));
@@ -403,6 +413,20 @@ public class GOTOConstructionPass extends ScopePass<IRExpr> {
          }
       }
       return result;
+   }
+
+   @Override
+   public IRExpr visitArrayExp(ArrayExp node){
+      Var array = (Var)visit(node.name);
+      ExpList exprList = (ExpList)node.index_list;
+      IRExpr index;
+      //doesn't handle multiple dimensions
+      if(exprList.list.size() != 0){
+         index = visit(exprList.list.get(0));
+         ArrayLoad result = new ArrayLoad(array, index, GOTOType.INT);
+         return result;
+      }
+      return defaultReturn;
    }
    
 }
