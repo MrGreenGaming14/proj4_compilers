@@ -442,7 +442,6 @@ public class GOTOConstructionPass extends ScopePass<IRExpr> {
       //doesn't handle multiple dimensions
       if(exprList.list.size() != 0){
          index = visit(exprList.list.get(0));
-         System.out.println(array.name);
          if(this.currentscope.hasArr(array.name)){
             ArrSymbol as = this.currentscope.getArr(array.name);
             currentFunction.instr.add(new CheckBounds(array.name, index, as.arrSize));
